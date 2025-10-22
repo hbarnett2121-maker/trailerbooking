@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailer Booking</title>
+  <style>
+    :root { --green:#06F713; --gray:#6b7280; --bg:#ffffff; --ink:#111; --border:#e5e7eb; }
+    *{box-sizing:border-box;font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif}
+    body{margin:0;background:#f8fafc;color:var(--ink)}
+    .wrap{max-width:1000px;margin:24px auto;padding:16px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:16px;margin-bottom:16px}
+    h1{margin:0 0 8px}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:#fff;cursor:pointer}
+    .pill.active{border-color:var(--green);background:rgba(6,247,19,.12)}
+    .toolbar{display:flex;align-items:center;gap:8px}
+    .btn{border:1px solid var(--border);padding:8px 12px;border-radius:10px;background:#fff;cursor:pointer}
+    .btn.primary{background:var(--green);font-weight:600}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .dow{font-size:12px;color:var(--gray);text-align:center;padding:6px 0}
+    .cell{border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;background:#fff;cursor:pointer}
+    .cell.sel{border-width:2px;border-color:var(--green);background:rgba(6,247,19,.12)}
+    .cell.dis{color:#9CA3AF;text-decoration:line-through;pointer-events:none}
+    .grid{display:grid;gap:8px}
+    .times{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    @media(min-width:800px){.times{grid-template-columns:repeat(6,1fr)}}
+    .time{border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;background:#fff;cursor:pointer;font-size:14px}
+    .time.sel{border-width:2px;border-color:var(--green);background:rgba(6,247,19,.12)}
+    .time.dis{color:#9CA3AF;text-decoration:line-through;cursor:not-allowed}
+    .hint{font-size:12px;color:var(--gray)}
+    .kvs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .kv{border:1px solid var(--green);border-radius:999px;padding:6px 10px;font-size:12px}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal.open{display:flex}
+    .sheet{background:#fff;border-radius:16px;max-width:640px;width:100%;padding:16px;border:1px solid var(--border)}
+    .field{display:flex;flex-direction:column;gap:6px}
+    input,textarea,select{border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;background:#fff}
+    .toast{position:fixed;right:16px;bottom:16px;background:var(--green);padding:10px 12px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Trailer Booking</h1>
+    <div class="card">
+      <div class="row" id="trailers"></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:8px">
+        <div id="monthLabel" style="font-weight:600"></div>
+        <div class="row">
+          <button class="btn" id="prev">← Prev</button>
+          <button class="btn" id="next">Next →</button>
+        </div>
+      </div>
+      <div class="calendar" id="dow"></div>
+      <div class="calendar" id="cal"></div>
+      <div class="hint" id="dateHint"></div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <div class="hint" style="margin-bottom:6px">Pickup time (6 AM – 6 PM)</div>
+          <div class="times" id="pickup"></div>
+        </div>
+        <div>
+          <div class="hint" style="margin-bottom:6px">Dropoff time (6 AM – 6 PM)</div>
+          <div class="times" id="dropoff"></div>
+        </div>
+        <div class="hint">Conflicting times are crossed out.</div>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="hint" id="summary">Complete selections to enable booking.</div>
+      <button class="btn primary" id="bookBtn" disabled>Book Now</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700">Complete Your Booking</div>
+        <button class="btn" id="closeModal">✕</button>
+      </div>
+      <div class="kvs" id="kv"></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>First name</label><input id="fn" placeholder="Jane"></div>
+        <div class="field"><label>Last name</label><input id="ln" placeholder="Doe"></div>
+        <div class="field"><label>Date of birth</label><input id="dob" type="date"></div>
+        <div class="field" style="grid-column:1/-1"><label>Reason for booking the trailer</label><textarea id="reason" rows="4" placeholder="Hauling appliances, moving, landscaping project, etc."></textarea></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn" id="cancel">Cancel</button>
+        <button class="btn primary" id="submit">Submit Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Config (HTTPS endpoint required) =====
+    // REPLACE THIS with your Vercel function URL when deployed:
+    const BOOKING_API_ENDPOINT = "https://YOUR_PROJECT.vercel.app/api/book";
+
+    const TRAILERS = [
+      "10 Ft Utility Trailer","12 Ft Cargo Trailer","20 Ft Car Hauler",
+      "20 Ft Utility Trailer","16 Ft Utility","16 Ft Utility 2",
+    ];
+    const HOURS = Array.from({length:13}, (_,i)=>6+i); // 6..18
+    const STORAGE_KEY = "trailer_reservations_v1";
+
+    const $ = (id)=>document.getElementById(id);
+    const fmtDate = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const timeLabel=(h)=>{const s=h>=12?"PM":"AM";const v=h%12===0?12:h%12;return `${v}:00 ${s}`};
+
+    let state = { trailer: TRAILERS[0], visible: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      start: null, end: null, pickup: null, dropoff: null, reservations: loadReservations() };
+
+    function saveReservations(r){ localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
+    function loadReservations(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch{ return []; } }
+
+    function overlaps(a,b){
+      const dateOverlap = !(new Date(a.endDate) < new Date(b.startDate) || new Date(b.endDate) < new Date(a.startDate));
+      if(!dateOverlap) return false;
+      return !(a.dropoffHour < b.pickupHour || b.dropoffHour < a.pickupHour);
+    }
+
+    function renderTrailers(){
+      const c = $("trailers"); c.innerHTML = "";
+      TRAILERS.forEach(t=>{
+        const btn = document.createElement('button');
+        btn.className = 'pill'+(state.trailer===t?' active':'');
+        btn.textContent = t;
+        btn.onclick = ()=>{ state.trailer=t; state.pickup=null; state.dropoff=null; $("summary").textContent='Complete selections to enable booking.'; draw(); };
+        c.appendChild(btn);
+      });
+    }
+
+    function renderMonth(){
+      $("monthLabel").textContent = state.visible.toLocaleString(undefined,{month:'long',year:'numeric'});
+      const dow = $("dow"); dow.innerHTML=""; ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{
+        const el = document.createElement('div'); el.className='dow'; el.textContent=d; dow.appendChild(el);
+      });
+      const cal = $("cal"); cal.innerHTML="";
+      const y = state.visible.getFullYear(), m = state.visible.getMonth();
+      const first = new Date(y,m,1), startWeek = first.getDay();
+      const daysInMonth = new Date(y,m+1,0).getDate();
+
+      const full = new Set();
+      const reservationsForTrailer = state.reservations.filter(r=>r.trailer===state.trailer);
+      reservationsForTrailer.forEach(r=>{
+        const sd = new Date(r.startDate), ed = new Date(r.endDate);
+        for(let d=new Date(sd); d<=ed; d.setDate(d.getDate()+1)){
+          if(r.pickupHour<=6 && r.dropoffHour>=18) full.add(fmtDate(d));
+        }
+      });
+
+      for(let i=0;i<startWeek;i++){ cal.appendChild(document.createElement('div')); }
+      for(let d=1; d<=daysInMonth; d++){
+        const date = new Date(y,m,d), ds = fmtDate(date);
+        const el = document.createElement('button'); el.className='cell'; el.textContent = d;
+        const selected = (state.start && sameDay(date,state.start)) || (state.end && sameDay(date,state.end)) || (state.start && state.end && date>=stripTime(state.start) && date<=stripTime(state.end));
+        if(selected) el.classList.add('sel');
+        if(full.has(ds)) el.classList.add('dis');
+        el.onclick = ()=>pickDate(date);
+        cal.appendChild(el);
+      }
+      const hint = $("dateHint");
+      if(state.start && !state.end) hint.textContent = `Start date: ${fmtDate(state.start)} — now choose your end date.`;
+      else if(state.start && state.end) hint.textContent = `Selected: ${fmtDate(state.start)} to ${fmtDate(state.end)}`; else hint.textContent='';
+    }
+
+    const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+    const stripTime=(d)=>new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    function pickDate(date){
+      if(!state.start || (state.start && state.end)){
+        state.start = date; state.end=null; state.pickup=null; state.dropoff=null;
+      } else if(date < state.start){
+        state.end = state.start; state.start = date; state.pickup=null; state.dropoff=null;
+      } else {
+        state.end = date; state.pickup=null; state.dropoff=null;
+      }
+      draw();
+    }
+
+    function disabledHours(){
+      if(!state.start || !state.end) return {pickup:[], dropoff:[]};
+      const rFor = state.reservations.filter(r=>r.trailer===state.trailer);
+      const dis = new Set();
+      const range = { startDate: fmtDate(state.start), endDate: fmtDate(state.end), pickupHour:6, dropoffHour:18 };
+      rFor.forEach(r=>{ if(overlaps(range,r)){ for(let h=r.pickupHour; h<=r.dropoffHour; h++) dis.add(h); } });
+      const arr = [...dis].sort((a,b)=>a-b);
+      return { pickup: arr, dropoff: arr };
+    }
+
+    function renderTimes(){
+      const dis = disabledHours();
+      const p = $("pickup"), d=$("dropoff"); p.innerHTML=""; d.innerHTML="";
+      HOURS.forEach(h=>{
+        const bp = document.createElement('button'); bp.className='time'+(state.pickup===h?' sel':'')+(dis.pickup.includes(h)?' dis':'');
+        bp.textContent=timeLabel(h); bp.disabled=dis.pickup.includes(h);
+        bp.onclick=()=>{ state.pickup=h; draw(); };
+        p.appendChild(bp);
+
+        const bd = document.createElement('button'); bd.className='time'+(state.dropoff===h?' sel':'')+(dis.dropoff.includes(h)?' dis':'');
+        bd.textContent=timeLabel(h); bd.disabled=dis.dropoff.includes(h);
+        bd.onclick=()=>{ state.dropoff=h; draw(); };
+        d.appendChild(bd);
+      });
+    }
+
+    function renderSummary(){
+      const ready = state.trailer && state.start && state.end && state.pickup!==null && state.dropoff!==null && state.dropoff>=state.pickup;
+      $("bookBtn").disabled = !ready;
+      $("summary").textContent = ready ? `Ready to book: ${state.trailer}, ${fmtDate(state.start)} → ${fmtDate(state.end)}, ${timeLabel(state.pickup)} → ${timeLabel(state.dropoff)}` : 'Complete selections to enable booking.';
+    }
+
+    function draw(){ renderTrailers(); renderMonth(); renderTimes(); renderSummary(); }
+    $("prev").onclick = ()=>{ state.visible = new Date(state.visible.getFullYear(), state.visible.getMonth()-1, 1); draw(); };
+    $("next").onclick = ()=>{ state.visible = new Date(state.visible.getFullYear(), state.visible.getMonth()+1, 1); draw(); };
+
+    $("bookBtn").onclick = ()=>{
+      $("kv").innerHTML = '';
+      const add=(t)=>{ const b=document.createElement('div'); b.className='kv'; b.textContent=t; $("kv").appendChild(b); };
+      add(state.trailer);
+      add(`${fmtDate(state.start)} → ${fmtDate(state.end)}`);
+      add(`${timeLabel(state.pickup)} → ${timeLabel(state.dropoff)}`);
+      document.getElementById("modal").classList.add('open');
+    };
+
+    ["closeModal","cancel"].forEach(id=>document.getElementById(id).onclick=()=>document.getElementById("modal").classList.remove('open'));
+    document.getElementById("submit").onclick = async ()=>{
+      const record = {
+        trailer: state.trailer, startDate: fmtDate(state.start), endDate: fmtDate(state.end),
+        pickupHour: state.pickup, dropoffHour: state.dropoff,
+        firstName: document.getElementById("fn").value.trim(),
+        lastName: document.getElementById("ln").value.trim(),
+        dob: document.getElementById("dob").value,
+        reason: document.getElementById("reason").value.trim(),
+        createdAt: new Date().toISOString(),
+      };
+      const missing = [];
+      if(!record.firstName) missing.push('First name');
+      if(!record.lastName) missing.push('Last name');
+      if(!record.dob) missing.push('Date of birth');
+      if(!record.reason) missing.push('Reason');
+      if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
+      try{
+        const res = await fetch(BOOKING_API_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record) });
+        if(!res.ok) throw new Error('Booking API error');
+        const list = loadReservations(); list.push(record); saveReservations(list);
+        document.getElementById("modal").classList.remove('open');
+        const t=document.createElement('div'); t.className='toast'; t.textContent='Booking submitted!'; document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+        state.start=null; state.end=null; state.pickup=null; state.dropoff=null; state.reservations=list; draw();
+      }catch(e){ alert('Could not submit booking. Please try again.'); }
+    };
+    draw();
+  </script>
+</body>
+</html>
