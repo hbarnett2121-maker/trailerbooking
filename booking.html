@@ -298,7 +298,7 @@
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 
       try{
-        const res = await fetch(BOOKING_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/booking.html", {
+        await fetch("https://trailerbookingrrwal.vercel.app/booking.html", {
           method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)
         });
         if(!res.ok) throw new Error('Booking API error');
