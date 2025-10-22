@@ -251,7 +251,8 @@
       if(!record.reason) missing.push('Reason');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
       try{
-        const res = await fetch(BOOKING_API_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record) });
+        const res = await fetch(BOOKING_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/booking".htmlp
+, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record) });
         if(!res.ok) throw new Error('Booking API error');
         const list = loadReservations(); list.push(record); saveReservations(list);
         document.getElementById("modal").classList.remove('open');
