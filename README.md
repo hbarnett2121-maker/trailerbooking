@@ -94,6 +94,7 @@ Each email includes:
 - Reason for booking
 - Timestamp
 - Driver's license photo (attached)
+- Proof of insurance (attached)
 
 ## API Endpoints
 

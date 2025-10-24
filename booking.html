@@ -130,6 +130,11 @@
           <input id="license" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
           <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your driver's license (JPEG or PNG)</div>
         </div>
+        <div class="field">
+          <label>Upload proof of insurance</label>
+          <input id="insurance" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
+          <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your insurance card or document (JPEG or PNG)</div>
+        </div>
         <div class="field"><label>Reason for booking the trailer</label><textarea id="reason" rows="4" placeholder="Hauling appliances, moving, landscaping project, etc."></textarea></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
@@ -144,7 +149,7 @@
     const BOOKING_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/api/book";
 
     // Data / utils
-    const TRAILERS = ["10 Ft Utility Trailer","12 Ft Cargo Trailer","20 Ft Car Hauler","20 Ft Utility Trailer","16 Ft Utility","16 Ft Utility 2"];
+    const TRAILERS = ["10 Ft Utility Trailer","12 Ft Cargo Trailer","20 Ft Car Hauler","20 Ft Utility Trailer","16 Ft Pipe Utility Trailer","16 Ft Ramp Utility Trailer"];
     const HOURS = Array.from({length:13}, (_,i)=>6+i); // 6..18
     const STORAGE_KEY = "trailer_reservations_v1";
     const $ = (id)=>document.getElementById(id);
@@ -320,7 +325,7 @@
     }
 
     $("submit").onclick = async ()=>{
-      // Get file and compress/convert to base64 if present
+      // Get license file and compress/convert to base64 if present
       const licenseFile = $("license").files[0];
       let licenseData = null;
       let licenseFilename = null;
@@ -331,7 +336,23 @@
           licenseData = await compressImage(licenseFile);
           licenseFilename = licenseFile.name.replace(/\.[^/.]+$/, '.jpg'); // Change extension to .jpg
         } catch (error) {
-          alert('Failed to process image. Please try a different photo.');
+          alert('Failed to process driver\'s license image. Please try a different photo.');
+          return;
+        }
+      }
+
+      // Get insurance file and compress/convert to base64 if present
+      const insuranceFile = $("insurance").files[0];
+      let insuranceData = null;
+      let insuranceFilename = null;
+
+      if (insuranceFile) {
+        try {
+          // Compress and resize image
+          insuranceData = await compressImage(insuranceFile);
+          insuranceFilename = insuranceFile.name.replace(/\.[^/.]+$/, '.jpg'); // Change extension to .jpg
+        } catch (error) {
+          alert('Failed to process insurance image. Please try a different photo.');
           return;
         }
       }
@@ -349,6 +370,8 @@
         dob: $("dob").value,
         driversLicense: licenseData,
         driversLicenseFilename: licenseFilename,
+        proofOfInsurance: insuranceData,
+        proofOfInsuranceFilename: insuranceFilename,
         reason: $("reason").value.trim(),
         createdAt: new Date().toISOString(),
       };
@@ -359,6 +382,7 @@
       if(!record.phone) missing.push('Phone number');
       if(!record.dob) missing.push('Date of birth');
       if(!record.driversLicense) missing.push('Driver\'s license photo');
+      if(!record.proofOfInsurance) missing.push('Proof of insurance photo');
       if(!record.reason) missing.push('Reason');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 
