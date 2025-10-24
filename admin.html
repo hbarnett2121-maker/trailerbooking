@@ -382,8 +382,6 @@
         });
 
         console.log('Response status:', response.status);
-        const responseText = await response.text();
-        console.log('Response body:', responseText);
 
         if (response.ok) {
           authToken = password;
@@ -391,7 +389,19 @@
           showDashboard();
           loadBookings();
         } else {
-          errorEl.textContent = `Login failed (${response.status}): ${responseText}`;
+          const responseText = await response.text();
+          console.log('Response body:', responseText);
+
+          let errorMessage = 'Invalid password';
+          if (response.status === 500) {
+            errorMessage = 'Server error. Please check if Firebase is configured in Vercel environment variables.';
+          } else if (response.status === 503) {
+            errorMessage = 'Database not configured. Please set up Firebase.';
+          } else if (response.status === 401) {
+            errorMessage = 'Invalid password';
+          }
+
+          errorEl.textContent = errorMessage;
           errorEl.classList.remove('hidden');
         }
       } catch (error) {

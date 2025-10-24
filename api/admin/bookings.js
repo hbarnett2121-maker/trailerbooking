@@ -36,8 +36,20 @@ module.exports = async (req, res) => {
   try {
     // GET - Retrieve all bookings
     if (req.method === "GET") {
-      const bookings = await getAllBookings();
-      return res.status(200).json({ bookings });
+      try {
+        const bookings = await getAllBookings();
+        return res.status(200).json({ bookings });
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+        // Return empty array if Firebase not configured
+        if (dbError.message.includes('Firestore not configured')) {
+          return res.status(503).json({
+            error: "Database not configured. Please set up Firebase and add FIREBASE_SERVICE_ACCOUNT to Vercel environment variables.",
+            bookings: []
+          });
+        }
+        throw dbError;
+      }
     }
 
     // DELETE - Delete a specific booking
@@ -54,6 +66,9 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     console.error("Admin API error:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: error.message,
+      details: "Check Vercel function logs for more information"
+    });
   }
 };
