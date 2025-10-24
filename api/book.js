@@ -1,20 +1,94 @@
-// api/book.js — minimal, CORS-safe, success response
+// api/book.js — CORS-safe booking endpoint with email notifications
+const nodemailer = require('nodemailer');
+
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
+
+async function sendBookingEmail(booking) {
+  // Configure email transporter
+  // You'll need to set these environment variables in Vercel:
+  // EMAIL_HOST (e.g., smtp.gmail.com)
+  // EMAIL_PORT (e.g., 587)
+  // EMAIL_USER (your email address)
+  // EMAIL_PASS (your email password or app-specific password)
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: process.env.EMAIL_PORT || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const emailContent = `
+NEW TRAILER BOOKING RECEIVED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BOOKING DETAILS:
+▸ Trailer: ${booking.trailer}
+▸ Start Date: ${booking.startDate}
+▸ End Date: ${booking.endDate}
+▸ Pickup Time: ${formatTime(booking.pickupHour)}
+▸ Dropoff Time: ${formatTime(booking.dropoffHour)}
+
+CUSTOMER INFORMATION:
+▸ First Name: ${booking.firstName}
+▸ Last Name: ${booking.lastName}
+▸ Date of Birth: ${booking.dob}
+▸ Reason for Booking: ${booking.reason}
+
+BOOKING TIMESTAMP:
+▸ Created At: ${booking.createdAt}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This booking was automatically submitted via the Trailer Booking System.
+  `.trim();
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: 'hbarnett2121@gmail.com',
+    subject: `🚚 New Booking: ${booking.trailer} (${booking.startDate} - ${booking.endDate})`,
+    text: emailContent,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+function formatTime(hour) {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:00 ${period}`;
+}
+
 module.exports = async (req, res) => {
   if (req.method === "OPTIONS") { cors(res); return res.status(204).end(); }
   if (req.method !== "POST")   { cors(res); return res.status(405).json({ error: "Method not allowed" }); }
 
   try {
     cors(res);
-    console.log("Booking received:", req.body); // see Vercel → Deployments → Runtime Logs
-    return res.status(200).json({ ok: true });  // <— always succeed
+    const booking = req.body;
+
+    console.log("Booking received:", booking);
+
+    // Send email notification
+    try {
+      await sendBookingEmail(booking);
+      console.log("Email sent successfully to hbarnett2121@gmail.com");
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      // Continue even if email fails - don't block the booking
+    }
+
+    return res.status(200).json({ ok: true });
   } catch (e) {
     cors(res);
-    return res.status(200).json({ ok: true });  // still succeed
+    console.error("Error processing booking:", e);
+    return res.status(200).json({ ok: true });
   }
 };
 
