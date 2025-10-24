@@ -1,5 +1,6 @@
-// api/book.js — CORS-safe booking endpoint with email notifications
+// api/book.js — CORS-safe booking endpoint with email notifications and Firestore storage
 const nodemailer = require('nodemailer');
+const { saveBooking } = require('./firebase');
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -82,6 +83,18 @@ module.exports = async (req, res) => {
 
     console.log("Booking received:", booking);
 
+    // Save to Firestore database
+    let savedBooking = null;
+    try {
+      savedBooking = await saveBooking(booking);
+      if (savedBooking) {
+        console.log("✓ Booking saved to database with ID:", savedBooking.id);
+      }
+    } catch (dbError) {
+      console.error("✗ Database save failed:", dbError.message);
+      // Continue even if database save fails
+    }
+
     // Send email notification
     try {
       await sendBookingEmail(booking);
@@ -93,7 +106,10 @@ module.exports = async (req, res) => {
       // But we should log this prominently so it shows up in Vercel logs
     }
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({
+      ok: true,
+      bookingId: savedBooking?.id
+    });
   } catch (e) {
     cors(res);
     console.error("Error processing booking:", e);
