@@ -13,24 +13,50 @@ function cors(res) {
  */
 function authenticate(req) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    console.log('❌ No authorization header');
-    return false;
-  }
+  if (!authHeader) return false;
 
   const password = authHeader.replace('Bearer ', '').trim();
   const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
 
-  console.log('🔐 Auth attempt:');
-  console.log('  - Received password:', password);
-  console.log('  - Password length:', password.length);
-  console.log('  - Expected password:', adminPassword);
-  console.log('  - Expected length:', adminPassword.length);
-  console.log('  - Has env var:', !!process.env.ADMIN_PASSWORD);
-  console.log('  - Raw env var:', process.env.ADMIN_PASSWORD);
-  console.log('  - Match:', password === adminPassword);
-
   return password === adminPassword;
+}
+
+function authenticateWithDebug(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return {
+      authenticated: false,
+      debug: {
+        error: 'No authorization header',
+        hasEnvVar: !!process.env.ADMIN_PASSWORD
+      }
+    };
+  }
+
+  const password = authHeader.replace('Bearer ', '').trim();
+  const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+  const match = password === adminPassword;
+
+  console.log('🔐 Auth attempt:', {
+    receivedLength: password.length,
+    expectedLength: adminPassword.length,
+    hasEnvVar: !!process.env.ADMIN_PASSWORD,
+    match
+  });
+
+  return {
+    authenticated: match,
+    debug: {
+      receivedPasswordLength: password.length,
+      expectedPasswordLength: adminPassword.length,
+      hasEnvironmentVariable: !!process.env.ADMIN_PASSWORD,
+      usingDefaultPassword: !process.env.ADMIN_PASSWORD,
+      match: match,
+      hint: !process.env.ADMIN_PASSWORD
+        ? 'Using default password: admin123'
+        : 'Using password from ADMIN_PASSWORD environment variable'
+    }
+  };
 }
 
 module.exports = async (req, res) => {
@@ -41,8 +67,12 @@ module.exports = async (req, res) => {
   }
 
   // Authenticate request
-  if (!authenticate(req)) {
-    return res.status(401).json({ error: "Unauthorized" });
+  const authResult = authenticateWithDebug(req);
+  if (!authResult.authenticated) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      debug: authResult.debug
+    });
   }
 
   try {
