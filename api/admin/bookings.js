@@ -16,7 +16,8 @@ function authenticate(req) {
   if (!authHeader) return false;
 
   const password = authHeader.replace('Bearer ', '').trim();
-  const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+  // TEMPORARY: Hardcoded password for testing
+  const adminPassword = 'Blessed1985!';
 
   return password === adminPassword;
 }
@@ -34,7 +35,9 @@ function authenticateWithDebug(req) {
   }
 
   const password = authHeader.replace('Bearer ', '').trim();
-  const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+  // TEMPORARY: Hardcoded password for testing
+  const hardcodedPassword = 'Blessed1985!';
+  const adminPassword = hardcodedPassword; // Use hardcoded instead of env var for now
   const match = password === adminPassword;
 
   console.log('🔐 Auth attempt:', {
@@ -50,11 +53,9 @@ function authenticateWithDebug(req) {
       receivedPasswordLength: password.length,
       expectedPasswordLength: adminPassword.length,
       hasEnvironmentVariable: !!process.env.ADMIN_PASSWORD,
-      usingDefaultPassword: !process.env.ADMIN_PASSWORD,
+      usingHardcodedPassword: true,
       match: match,
-      hint: !process.env.ADMIN_PASSWORD
-        ? 'Using default password: admin123'
-        : 'Using password from ADMIN_PASSWORD environment variable'
+      hint: 'TEMPORARY: Using hardcoded password Blessed1985! for testing'
     }
   };
 }
