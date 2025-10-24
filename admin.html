@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Trailer Bookings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .login-card, .dashboard-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      padding: 40px;
+    }
+
+    .login-card {
+      max-width: 400px;
+      margin: 100px auto;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    h2 {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 18px;
+      font-weight: 400;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    input[type="password"],
+    input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="password"]:focus,
+    input[type="text"]:focus,
+    input[type="date"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-small {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      margin-left: 10px;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .error {
+      color: #f5576c;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .success {
+      color: #00c9a7;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-card h3 {
+      font-size: 32px;
+      margin-bottom: 5px;
+    }
+
+    .stat-card p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    thead {
+      background: #f8f9fa;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      color: #333;
+    }
+
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-confirmed {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .btn-delete {
+      background: #f5576c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-delete:hover {
+      opacity: 0.8;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Form -->
+  <div id="loginCard" class="login-card">
+    <h1>Admin Login</h1>
+    <h2>Trailer Booking Dashboard</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter admin password" required>
+      </div>
+      <button type="submit" class="btn">Login</button>
+      <div id="loginError" class="error hidden"></div>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="container hidden">
+    <div class="dashboard-card">
+      <div class="header">
+        <div>
+          <h1>Booking Dashboard</h1>
+          <h2>Manage trailer bookings</h2>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats">
+        <div class="stat-card">
+          <h3 id="totalBookings">0</h3>
+          <p>Total Bookings</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="todayBookings">0</h3>
+          <p>Today's Bookings</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="upcomingBookings">0</h3>
+          <p>Upcoming</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="form-group">
+          <label for="searchInput">Search</label>
+          <input type="text" id="searchInput" placeholder="Search by name, trailer, or reason...">
+        </div>
+        <div class="form-group">
+          <label for="trailerFilter">Filter by Trailer</label>
+          <select id="trailerFilter" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+            <option value="">All Trailers</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="startDateFilter">Start Date From</label>
+          <input type="date" id="startDateFilter">
+        </div>
+        <div class="form-group">
+          <label for="endDateFilter">Start Date To</label>
+          <input type="date" id="endDateFilter">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <button class="btn btn-success btn-small" onclick="exportToCSV()">Export to CSV</button>
+        <button class="btn btn-small" onclick="refreshBookings()">Refresh</button>
+      </div>
+
+      <!-- Bookings Table -->
+      <div class="table-container">
+        <div id="loading" class="loading">Loading bookings...</div>
+        <div id="noData" class="no-data hidden">No bookings found</div>
+        <table id="bookingsTable" class="hidden">
+          <thead>
+            <tr>
+              <th>Date Created</th>
+              <th>Customer</th>
+              <th>Trailer</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Pickup Time</th>
+              <th>Dropoff Time</th>
+              <th>DOB</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const ADMIN_API = `${API_BASE}/api/admin/bookings`;
+    let authToken = null;
+    let allBookings = [];
+    let filteredBookings = [];
+
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('loginError');
+
+      try {
+        const response = await fetch(ADMIN_API, {
+          headers: {
+            'Authorization': `Bearer ${password}`
+          }
+        });
+
+        if (response.ok) {
+          authToken = password;
+          localStorage.setItem('adminToken', password);
+          showDashboard();
+          loadBookings();
+        } else {
+          errorEl.textContent = 'Invalid password';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (error) {
+        errorEl.textContent = 'Login failed: ' + error.message;
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    // Check for saved token
+    window.addEventListener('load', () => {
+      const savedToken = localStorage.getItem('adminToken');
+      if (savedToken) {
+        authToken = savedToken;
+        showDashboard();
+        loadBookings();
+      }
+    });
+
+    function showDashboard() {
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      authToken = null;
+      document.getElementById('loginCard').classList.remove('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('password').value = '';
+    }
+
+    async function loadBookings() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('bookingsTable').classList.add('hidden');
+        document.getElementById('noData').classList.add('hidden');
+
+        const response = await fetch(ADMIN_API, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load bookings');
+        }
+
+        const data = await response.json();
+        allBookings = data.bookings || [];
+
+        // Populate trailer filter
+        populateTrailerFilter();
+
+        // Apply filters
+        applyFilters();
+
+        document.getElementById('loading').classList.add('hidden');
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+        document.getElementById('loading').innerHTML = 'Error loading bookings: ' + error.message;
+      }
+    }
+
+    function populateTrailerFilter() {
+      const trailers = [...new Set(allBookings.map(b => b.trailer))];
+      const filterEl = document.getElementById('trailerFilter');
+
+      // Keep "All Trailers" option and add unique trailers
+      filterEl.innerHTML = '<option value="">All Trailers</option>';
+      trailers.forEach(trailer => {
+        const option = document.createElement('option');
+        option.value = trailer;
+        option.textContent = trailer;
+        filterEl.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const trailerFilter = document.getElementById('trailerFilter').value;
+      const startDateFrom = document.getElementById('startDateFilter').value;
+      const startDateTo = document.getElementById('endDateFilter').value;
+
+      filteredBookings = allBookings.filter(booking => {
+        // Search filter
+        const searchMatch = !searchTerm ||
+          booking.firstName?.toLowerCase().includes(searchTerm) ||
+          booking.lastName?.toLowerCase().includes(searchTerm) ||
+          booking.trailer?.toLowerCase().includes(searchTerm) ||
+          booking.reason?.toLowerCase().includes(searchTerm);
+
+        // Trailer filter
+        const trailerMatch = !trailerFilter || booking.trailer === trailerFilter;
+
+        // Date filters
+        const bookingDate = new Date(booking.startDate);
+        const dateFromMatch = !startDateFrom || bookingDate >= new Date(startDateFrom);
+        const dateToMatch = !startDateTo || bookingDate <= new Date(startDateTo);
+
+        return searchMatch && trailerMatch && dateFromMatch && dateToMatch;
+      });
+
+      renderBookings();
+      updateStats();
+    }
+
+    function renderBookings() {
+      const tbody = document.getElementById('bookingsBody');
+      tbody.innerHTML = '';
+
+      if (filteredBookings.length === 0) {
+        document.getElementById('noData').classList.remove('hidden');
+        document.getElementById('bookingsTable').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('noData').classList.add('hidden');
+      document.getElementById('bookingsTable').classList.remove('hidden');
+
+      filteredBookings.forEach(booking => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatTimestamp(booking.createdAt)}</td>
+          <td>${booking.firstName} ${booking.lastName}</td>
+          <td>${booking.trailer}</td>
+          <td>${booking.startDate}</td>
+          <td>${booking.endDate}</td>
+          <td>${formatTime(booking.pickupHour)}</td>
+          <td>${formatTime(booking.dropoffHour)}</td>
+          <td>${booking.dob}</td>
+          <td>${booking.reason}</td>
+          <td><span class="badge badge-confirmed">${booking.status || 'confirmed'}</span></td>
+          <td>
+            <button class="btn-delete" onclick="deleteBooking('${booking.id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateStats() {
+      const total = allBookings.length;
+      const today = new Date().toISOString().split('T')[0];
+      const todayCount = allBookings.filter(b => {
+        const createdDate = new Date(b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt);
+        return createdDate.toISOString().split('T')[0] === today;
+      }).length;
+
+      const upcoming = allBookings.filter(b => {
+        const startDate = new Date(b.startDate);
+        return startDate >= new Date();
+      }).length;
+
+      document.getElementById('totalBookings').textContent = total;
+      document.getElementById('todayBookings').textContent = todayCount;
+      document.getElementById('upcomingBookings').textContent = upcoming;
+    }
+
+    async function deleteBooking(id) {
+      if (!confirm('Are you sure you want to delete this booking?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${ADMIN_API}?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        if (response.ok) {
+          alert('Booking deleted successfully');
+          loadBookings();
+        } else {
+          alert('Failed to delete booking');
+        }
+      } catch (error) {
+        alert('Error deleting booking: ' + error.message);
+      }
+    }
+
+    function refreshBookings() {
+      loadBookings();
+    }
+
+    function exportToCSV() {
+      if (filteredBookings.length === 0) {
+        alert('No bookings to export');
+        return;
+      }
+
+      const headers = ['Created At', 'First Name', 'Last Name', 'Trailer', 'Start Date', 'End Date', 'Pickup Time', 'Dropoff Time', 'DOB', 'Reason', 'Status'];
+      const rows = filteredBookings.map(b => [
+        formatTimestamp(b.createdAt),
+        b.firstName,
+        b.lastName,
+        b.trailer,
+        b.startDate,
+        b.endDate,
+        formatTime(b.pickupHour),
+        formatTime(b.dropoffHour),
+        b.dob,
+        b.reason,
+        b.status || 'confirmed'
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    function formatTime(hour) {
+      if (!hour && hour !== 0) return 'N/A';
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      return `${displayHour}:00 ${period}`;
+    }
+
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return 'N/A';
+
+      let date;
+      if (timestamp.seconds) {
+        // Firestore timestamp
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+
+      return date.toLocaleString();
+    }
+
+    // Event listeners for filters
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('trailerFilter').addEventListener('change', applyFilters);
+    document.getElementById('startDateFilter').addEventListener('change', applyFilters);
+    document.getElementById('endDateFilter').addEventListener('change', applyFilters);
+  </script>
+</body>
+</html>
