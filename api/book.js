@@ -1,6 +1,5 @@
-// api/book.js — CORS-safe booking endpoint with email notifications and Firestore storage
+// api/book.js — CORS-safe booking endpoint with email notifications
 const nodemailer = require('nodemailer');
-const { saveBooking } = require('./firebase');
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -47,6 +46,8 @@ BOOKING DETAILS:
 CUSTOMER INFORMATION:
 ▸ First Name: ${booking.firstName}
 ▸ Last Name: ${booking.lastName}
+▸ Email: ${booking.email}
+▸ Phone: ${booking.phone}
 ▸ Date of Birth: ${booking.dob}
 ▸ Reason for Booking: ${booking.reason}
 
@@ -55,14 +56,27 @@ BOOKING TIMESTAMP:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 This booking was automatically submitted via the Trailer Booking System.
+
+Driver's license photo is attached to this email.
   `.trim();
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: 'hbarnett2121@gmail.com',
-    subject: `🚚 New Booking: ${booking.trailer} (${booking.startDate} - ${booking.endDate})`,
+    subject: `🚚 New Booking: ${booking.trailer} - ${booking.firstName} ${booking.lastName}`,
     text: emailContent,
   };
+
+  // Attach driver's license if provided
+  if (booking.driversLicense && booking.driversLicenseFilename) {
+    mailOptions.attachments = [
+      {
+        filename: booking.driversLicenseFilename,
+        content: booking.driversLicense,
+        encoding: 'base64'
+      }
+    ];
+  }
 
   await transporter.sendMail(mailOptions);
 }
@@ -83,18 +97,6 @@ module.exports = async (req, res) => {
 
     console.log("Booking received:", booking);
 
-    // Save to Firestore database
-    let savedBooking = null;
-    try {
-      savedBooking = await saveBooking(booking);
-      if (savedBooking) {
-        console.log("✓ Booking saved to database with ID:", savedBooking.id);
-      }
-    } catch (dbError) {
-      console.error("✗ Database save failed:", dbError.message);
-      // Continue even if database save fails
-    }
-
     // Send email notification
     try {
       await sendBookingEmail(booking);
@@ -106,10 +108,7 @@ module.exports = async (req, res) => {
       // But we should log this prominently so it shows up in Vercel logs
     }
 
-    return res.status(200).json({
-      ok: true,
-      bookingId: savedBooking?.id
-    });
+    return res.status(200).json({ ok: true });
   } catch (e) {
     cors(res);
     console.error("Error processing booking:", e);

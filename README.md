@@ -1,6 +1,6 @@
 # Trailer Booking System
 
-A complete trailer booking system with calendar interface, email notifications, and admin dashboard.
+A simple trailer booking system with calendar interface and email notifications.
 
 ## Features
 
@@ -10,37 +10,24 @@ A complete trailer booking system with calendar interface, email notifications, 
 - Pickup and dropoff time selection
 - Customer information form
 - Real-time availability checking
-- Confirmation emails
+- Email confirmations sent to admin
 
-### Admin Dashboard (`/admin`)
-- View all bookings in a sortable table
-- Real-time statistics (total, today, upcoming)
-- Search and filter functionality
-- Export bookings to CSV
-- Delete/manage bookings
-- Password-protected access
-
-### Backend
-- Email notifications via Nodemailer (Gmail SMTP)
-- Firebase Firestore database storage
-- RESTful API endpoints
-- Vercel serverless functions
+### Email Notifications
+- Instant email notification for each booking
+- Includes all booking details (trailer, dates, times)
+- Includes customer information (name, DOB, reason)
+- Sent to: hbarnett2121@gmail.com
 
 ## Project Structure
 
 ```
 trailerbooking/
-├── booking.html          # Customer booking interface
-├── admin.html           # Admin dashboard
+├── booking.html         # Customer booking interface
 ├── api/
-│   ├── book.js          # Booking submission endpoint
-│   ├── firebase.js      # Firebase utilities
-│   └── admin/
-│       └── bookings.js  # Admin API (get/delete bookings)
+│   └── book.js          # Booking submission endpoint (sends email)
 ├── package.json         # Dependencies
 ├── vercel.json          # Vercel deployment config
-├── .env.example         # Environment variable template
-└── FIREBASE_SETUP.md    # Firebase setup instructions
+└── .env.example         # Environment variable template
 ```
 
 ## Quick Start
@@ -53,17 +40,7 @@ cd trailerbooking
 npm install
 ```
 
-### 2. Set Up Firebase
-
-Follow the detailed instructions in [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)
-
-Quick summary:
-1. Create Firebase project
-2. Enable Firestore
-3. Get service account credentials
-4. Add to Vercel environment variables
-
-### 3. Configure Environment Variables
+### 2. Configure Email
 
 In Vercel dashboard, add these environment variables:
 
@@ -73,13 +50,16 @@ In Vercel dashboard, add these environment variables:
 - `EMAIL_USER` - Your email address
 - `EMAIL_PASS` - App-specific password
 
-**Firebase Configuration:**
-- `FIREBASE_SERVICE_ACCOUNT` - Complete JSON from Firebase service account
-
-**Admin Access:**
-- `ADMIN_PASSWORD` - Password for admin dashboard
-
 See `.env.example` for details.
+
+### 3. Gmail Setup
+
+1. Enable 2-Step Verification in Google Account
+2. Generate App-Specific Password:
+   - Visit https://myaccount.google.com/apppasswords
+   - Select "Mail" as the app
+   - Copy the generated password
+3. Use this password as `EMAIL_PASS` in environment variables
 
 ### 4. Deploy to Vercel
 
@@ -97,14 +77,23 @@ Or connect your GitHub repository to Vercel for automatic deployments.
 2. Select trailer and dates
 3. Fill in personal information
 4. Submit booking
-5. Receive confirmation email
+5. Admin receives email notification
 
 ### For Admins
 
-1. Visit `https://your-domain.vercel.app/admin`
-2. Log in with admin password
-3. View, search, filter, and export bookings
-4. Manage bookings (view details, delete)
+Check your email inbox at `hbarnett2121@gmail.com` for booking notifications.
+
+Each email includes:
+- Trailer name
+- Start and end dates
+- Pickup and dropoff times
+- Customer name
+- Customer email address
+- Customer phone number
+- Date of birth
+- Reason for booking
+- Timestamp
+- Driver's license photo (attached)
 
 ## API Endpoints
 
@@ -121,7 +110,11 @@ Submit a new booking
   "dropoffHour": 16,
   "firstName": "John",
   "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "(555) 123-4567",
   "dob": "1990-01-01",
+  "driversLicense": "base64-encoded-image-data",
+  "driversLicenseFilename": "license.jpg",
   "reason": "Moving",
   "createdAt": "2025-10-24T12:00:00Z"
 }
@@ -130,79 +123,9 @@ Submit a new booking
 **Response:**
 ```json
 {
-  "ok": true,
-  "bookingId": "abc123"
-}
-```
-
-### `GET /api/admin/bookings`
-Get all bookings (requires authentication)
-
-**Headers:**
-```
-Authorization: Bearer <admin-password>
-```
-
-**Response:**
-```json
-{
-  "bookings": [
-    {
-      "id": "abc123",
-      "trailer": "Trailer 1",
-      "startDate": "2025-10-25",
-      ...
-    }
-  ]
-}
-```
-
-### `DELETE /api/admin/bookings?id=<booking-id>`
-Delete a booking (requires authentication)
-
-**Headers:**
-```
-Authorization: Bearer <admin-password>
-```
-
-**Response:**
-```json
-{
   "ok": true
 }
 ```
-
-## Database Schema
-
-### Firestore Collection: `bookings`
-
-```javascript
-{
-  id: "auto-generated",
-  trailer: "Trailer 1",
-  startDate: "2025-10-25",
-  endDate: "2025-10-27",
-  pickupHour: 10,
-  dropoffHour: 16,
-  firstName: "John",
-  lastName: "Doe",
-  dob: "1990-01-01",
-  reason: "Moving",
-  createdAt: Timestamp,
-  status: "confirmed"
-}
-```
-
-## Email Configuration
-
-### Gmail Setup
-
-1. Enable 2-Step Verification in Google Account
-2. Generate App-Specific Password:
-   - Visit https://myaccount.google.com/apppasswords
-   - Select "Mail" as the app
-   - Copy the generated password
-3. Use this password as `EMAIL_PASS` in environment variables
 
 ## Local Development
 
@@ -220,25 +143,20 @@ nano .env
 vercel dev
 ```
 
-Visit:
-- Booking form: http://localhost:3000/booking
-- Admin dashboard: http://localhost:3000/admin
+Visit: http://localhost:3000/booking
 
 ## Technologies Used
 
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3
 - **Backend**: Node.js, Vercel Serverless Functions
-- **Database**: Firebase Firestore
 - **Email**: Nodemailer (Gmail SMTP)
 - **Hosting**: Vercel
 
 ## Security
 
-- Admin dashboard protected by password
-- Firebase Admin SDK for server-side database access
-- Firestore security rules prevent unauthorized access
 - HTTPS enforced by Vercel
 - Environment variables for sensitive credentials
+- CORS enabled for API endpoints
 
 ## Browser Compatibility
 
@@ -249,32 +167,50 @@ Visit:
 
 ## Troubleshooting
 
-### Bookings not saving to database
-- Check Vercel logs: `vercel logs`
-- Verify `FIREBASE_SERVICE_ACCOUNT` is set correctly
-- Check Firestore security rules
-
 ### Email not sending
-- Verify email environment variables
+- Verify email environment variables in Vercel
 - Check Gmail app password is correct
-- Review Vercel function logs
+- Review Vercel function logs: `vercel logs`
+- Ensure 2-Step Verification is enabled on Gmail
 
-### Admin dashboard login fails
-- Confirm `ADMIN_PASSWORD` is set in Vercel
-- Clear browser cache/localStorage
+### Bookings not submitted
 - Check browser console for errors
+- Verify API endpoint is accessible
+- Check Vercel deployment status
 
-## Future Enhancements
+## Email Format
 
-Potential improvements:
-- Email confirmations to customers
-- Booking editing/modification
-- Calendar sync (iCal, Google Calendar)
-- SMS notifications
-- Multi-user admin roles
-- Booking conflicts prevention (server-side)
-- Payment integration
-- Customer portal (view/cancel bookings)
+Each booking email includes:
+
+```
+NEW TRAILER BOOKING RECEIVED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BOOKING DETAILS:
+▸ Trailer: [trailer name]
+▸ Start Date: [date]
+▸ End Date: [date]
+▸ Pickup Time: [time]
+▸ Dropoff Time: [time]
+
+CUSTOMER INFORMATION:
+▸ First Name: [name]
+▸ Last Name: [name]
+▸ Email: [email]
+▸ Phone: [phone]
+▸ Date of Birth: [DOB]
+▸ Reason for Booking: [reason]
+
+BOOKING TIMESTAMP:
+▸ Created At: [ISO timestamp]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This booking was automatically submitted via the Trailer Booking System.
+
+Driver's license photo is attached to this email.
+```
+
+**Note:** The customer's driver's license photo will be attached as an image file to the email.
 
 ## License
 
@@ -283,6 +219,6 @@ MIT
 ## Support
 
 For issues or questions:
-1. Check [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for Firebase setup
-2. Review Vercel deployment logs
-3. Check environment variables configuration
+1. Check Vercel deployment logs
+2. Verify environment variables configuration
+3. Review Gmail app password setup
