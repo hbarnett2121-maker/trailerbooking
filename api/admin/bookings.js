@@ -22,9 +22,12 @@ function authenticate(req) {
   const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
 
   console.log('🔐 Auth attempt:');
+  console.log('  - Received password:', password);
   console.log('  - Password length:', password.length);
+  console.log('  - Expected password:', adminPassword);
   console.log('  - Expected length:', adminPassword.length);
   console.log('  - Has env var:', !!process.env.ADMIN_PASSWORD);
+  console.log('  - Raw env var:', process.env.ADMIN_PASSWORD);
   console.log('  - Match:', password === adminPassword);
 
   return password === adminPassword;
