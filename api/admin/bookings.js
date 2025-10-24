@@ -13,10 +13,19 @@ function cors(res) {
  */
 function authenticate(req) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return false;
+  if (!authHeader) {
+    console.log('❌ No authorization header');
+    return false;
+  }
 
-  const password = authHeader.replace('Bearer ', '');
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const password = authHeader.replace('Bearer ', '').trim();
+  const adminPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+
+  console.log('🔐 Auth attempt:');
+  console.log('  - Password length:', password.length);
+  console.log('  - Expected length:', adminPassword.length);
+  console.log('  - Has env var:', !!process.env.ADMIN_PASSWORD);
+  console.log('  - Match:', password === adminPassword);
 
   return password === adminPassword;
 }
