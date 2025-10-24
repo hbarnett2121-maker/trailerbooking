@@ -49,7 +49,8 @@ CUSTOMER INFORMATION:
 ▸ Email: ${booking.email}
 ▸ Phone: ${booking.phone}
 ▸ Date of Birth: ${booking.dob}
-▸ Reason for Booking: ${booking.reason}
+▸ What are you hauling: ${booking.reason}
+▸ Trailer Experience: ${booking.trailerExperience === 'yes' ? 'Yes, I\'ve hauled a trailer before' : 'No, I haven\'t. Can I get a walkthrough?'}
 
 BOOKING TIMESTAMP:
 ▸ Created At: ${booking.createdAt}
