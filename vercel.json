@@ -7,11 +7,5 @@
   "routes": [
     { "src": "/booking", "dest": "/booking.html" },
     { "src": "/api/book", "dest": "/api/book.js" }
-  ],
-  "functions": {
-    "api/book.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  }
+  ]
 }
