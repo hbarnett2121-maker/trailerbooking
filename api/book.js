@@ -46,6 +46,8 @@ BOOKING DETAILS:
 CUSTOMER INFORMATION:
 ▸ First Name: ${booking.firstName}
 ▸ Last Name: ${booking.lastName}
+▸ Email: ${booking.email}
+▸ Phone: ${booking.phone}
 ▸ Date of Birth: ${booking.dob}
 ▸ Reason for Booking: ${booking.reason}
 
@@ -54,14 +56,27 @@ BOOKING TIMESTAMP:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 This booking was automatically submitted via the Trailer Booking System.
+
+Driver's license photo is attached to this email.
   `.trim();
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: 'hbarnett2121@gmail.com',
-    subject: `🚚 New Booking: ${booking.trailer} (${booking.startDate} - ${booking.endDate})`,
+    subject: `🚚 New Booking: ${booking.trailer} - ${booking.firstName} ${booking.lastName}`,
     text: emailContent,
   };
+
+  // Attach driver's license if provided
+  if (booking.driversLicense && booking.driversLicenseFilename) {
+    mailOptions.attachments = [
+      {
+        filename: booking.driversLicenseFilename,
+        content: booking.driversLicense,
+        encoding: 'base64'
+      }
+    ];
+  }
 
   await transporter.sendMail(mailOptions);
 }

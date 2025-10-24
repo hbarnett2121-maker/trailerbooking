@@ -122,7 +122,14 @@
       <div class="grid" style="grid-template-columns:1fr;gap:12px">
         <div class="field"><label>First name</label><input id="fn" placeholder="Jane"></div>
         <div class="field"><label>Last name</label><input id="ln" placeholder="Doe"></div>
+        <div class="field"><label>Email</label><input id="email" type="email" placeholder="jane@example.com"></div>
+        <div class="field"><label>Phone number</label><input id="phone" type="tel" placeholder="(555) 123-4567"></div>
         <div class="field"><label>Date of birth</label><input id="dob" type="date"></div>
+        <div class="field">
+          <label>Upload driver's license</label>
+          <input id="license" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
+          <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your driver's license (JPEG or PNG)</div>
+        </div>
         <div class="field"><label>Reason for booking the trailer</label><textarea id="reason" rows="4" placeholder="Hauling appliances, moving, landscaping project, etc."></textarea></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
@@ -278,6 +285,22 @@
     ["closeModal","cancel"].forEach(id=>$(id).onclick=()=>$("modal").classList.remove('open'));
 
     $("submit").onclick = async ()=>{
+      // Get file and convert to base64 if present
+      const licenseFile = $("license").files[0];
+      let licenseData = null;
+      let licenseFilename = null;
+
+      if (licenseFile) {
+        // Convert file to base64
+        licenseData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]); // Get base64 part only
+          reader.onerror = reject;
+          reader.readAsDataURL(licenseFile);
+        });
+        licenseFilename = licenseFile.name;
+      }
+
       const record = {
         trailer: state.trailer,
         startDate: fmtDate(state.start),
@@ -286,14 +309,21 @@
         dropoffHour: state.dropoff,
         firstName: $("fn").value.trim(),
         lastName: $("ln").value.trim(),
+        email: $("email").value.trim(),
+        phone: $("phone").value.trim(),
         dob: $("dob").value,
+        driversLicense: licenseData,
+        driversLicenseFilename: licenseFilename,
         reason: $("reason").value.trim(),
         createdAt: new Date().toISOString(),
       };
       const missing = [];
       if(!record.firstName) missing.push('First name');
       if(!record.lastName) missing.push('Last name');
+      if(!record.email) missing.push('Email');
+      if(!record.phone) missing.push('Phone number');
       if(!record.dob) missing.push('Date of birth');
+      if(!record.driversLicense) missing.push('Driver\'s license photo');
       if(!record.reason) missing.push('Reason');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 

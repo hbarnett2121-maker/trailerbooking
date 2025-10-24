@@ -88,9 +88,12 @@ Each email includes:
 - Start and end dates
 - Pickup and dropoff times
 - Customer name
+- Customer email address
+- Customer phone number
 - Date of birth
 - Reason for booking
 - Timestamp
+- Driver's license photo (attached)
 
 ## API Endpoints
 
@@ -107,7 +110,11 @@ Submit a new booking
   "dropoffHour": 16,
   "firstName": "John",
   "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "(555) 123-4567",
   "dob": "1990-01-01",
+  "driversLicense": "base64-encoded-image-data",
+  "driversLicenseFilename": "license.jpg",
   "reason": "Moving",
   "createdAt": "2025-10-24T12:00:00Z"
 }
@@ -189,12 +196,21 @@ BOOKING DETAILS:
 CUSTOMER INFORMATION:
 ▸ First Name: [name]
 ▸ Last Name: [name]
+▸ Email: [email]
+▸ Phone: [phone]
 ▸ Date of Birth: [DOB]
 ▸ Reason for Booking: [reason]
 
 BOOKING TIMESTAMP:
 ▸ Created At: [ISO timestamp]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This booking was automatically submitted via the Trailer Booking System.
+
+Driver's license photo is attached to this email.
 ```
+
+**Note:** The customer's driver's license photo will be attached as an image file to the email.
 
 ## License
 
