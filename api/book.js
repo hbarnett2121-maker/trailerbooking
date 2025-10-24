@@ -57,7 +57,9 @@ BOOKING TIMESTAMP:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 This booking was automatically submitted via the Trailer Booking System.
 
-Driver's license photo is attached to this email.
+Attachments:
+▸ Driver's license photo
+▸ Proof of insurance
   `.trim();
 
   const mailOptions = {
@@ -67,15 +69,27 @@ Driver's license photo is attached to this email.
     text: emailContent,
   };
 
-  // Attach driver's license if provided
+  // Attach documents
+  const attachments = [];
+
   if (booking.driversLicense && booking.driversLicenseFilename) {
-    mailOptions.attachments = [
-      {
-        filename: booking.driversLicenseFilename,
-        content: booking.driversLicense,
-        encoding: 'base64'
-      }
-    ];
+    attachments.push({
+      filename: booking.driversLicenseFilename,
+      content: booking.driversLicense,
+      encoding: 'base64'
+    });
+  }
+
+  if (booking.proofOfInsurance && booking.proofOfInsuranceFilename) {
+    attachments.push({
+      filename: booking.proofOfInsuranceFilename,
+      content: booking.proofOfInsurance,
+      encoding: 'base64'
+    });
+  }
+
+  if (attachments.length > 0) {
+    mailOptions.attachments = attachments;
   }
 
   await transporter.sendMail(mailOptions);
