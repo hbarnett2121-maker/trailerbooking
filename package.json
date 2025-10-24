@@ -1,0 +1,19 @@
+{
+  "name": "trailer-booking",
+  "version": "1.0.0",
+  "description": "Trailer booking system with calendar and email notifications",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.7"
+  },
+  "keywords": [
+    "booking",
+    "calendar",
+    "trailer"
+  ],
+  "author": "",
+  "license": "ISC"
+}

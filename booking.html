@@ -297,25 +297,27 @@
       if(!record.reason) missing.push('Reason');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 
-// inside your "Submit" button onclick handler:
-try {
-  const resp = await fetch(https://trailerbookingrrwal.vercel.app/booking.html", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record)
-  });
+      // inside your "Submit" button onclick handler:
+      try {
+        const resp = await fetch(BOOKING_API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(record)
+        });
 
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-  // mark times as taken and show success
-  const list = loadReservations(); list.push(record); saveReservations(list);
-  document.getElementById("modal").classList.remove("open");
-  const t = document.createElement("div"); t.className = "toast"; t.textContent = "Booking submitted!";
-  document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
-  state.start=null; state.end=null; state.pickup=null; state.dropoff=null; state.reservations=list; draw();
-} catch (e) {
-  alert("Could not submit booking. " + (e?.message || ""));
-}
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        // mark times as taken and show success
+        const list = loadReservations(); list.push(record); saveReservations(list);
+        $("modal").classList.remove("open");
+        const t = document.createElement("div"); t.className = "toast"; t.textContent = "Booking submitted!";
+        document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+        state.start=null; state.end=null; state.pickup=null; state.dropoff=null; state.reservations=list; draw();
+      } catch (e) {
+        alert("Could not submit booking. " + (e?.message || ""));
+      }
+    };
 
     // Init
     draw();
