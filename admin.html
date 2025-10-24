@@ -374,11 +374,16 @@
       const errorEl = document.getElementById('loginError');
 
       try {
+        console.log('Attempting login with URL:', ADMIN_API);
         const response = await fetch(ADMIN_API, {
           headers: {
             'Authorization': `Bearer ${password}`
           }
         });
+
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response body:', responseText);
 
         if (response.ok) {
           authToken = password;
@@ -386,10 +391,11 @@
           showDashboard();
           loadBookings();
         } else {
-          errorEl.textContent = 'Invalid password';
+          errorEl.textContent = `Login failed (${response.status}): ${responseText}`;
           errorEl.classList.remove('hidden');
         }
       } catch (error) {
+        console.error('Login error:', error);
         errorEl.textContent = 'Login failed: ' + error.message;
         errorEl.classList.remove('hidden');
       }
