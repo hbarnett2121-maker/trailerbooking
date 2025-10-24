@@ -15,6 +15,11 @@ async function sendBookingEmail(booking) {
   // EMAIL_USER (your email address)
   // EMAIL_PASS (your email password or app-specific password)
 
+  // Validate required environment variables
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Email configuration missing: EMAIL_USER and EMAIL_PASS must be set in Vercel environment variables');
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
@@ -24,6 +29,8 @@ async function sendBookingEmail(booking) {
       pass: process.env.EMAIL_PASS,
     },
   });
+
+  console.log(`Attempting to send email from ${process.env.EMAIL_USER} to hbarnett2121@gmail.com`);
 
   const emailContent = `
 NEW TRAILER BOOKING RECEIVED
@@ -78,10 +85,12 @@ module.exports = async (req, res) => {
     // Send email notification
     try {
       await sendBookingEmail(booking);
-      console.log("Email sent successfully to hbarnett2121@gmail.com");
+      console.log("✓ Email sent successfully to hbarnett2121@gmail.com");
     } catch (emailError) {
-      console.error("Email sending failed:", emailError);
+      console.error("✗ Email sending failed:", emailError.message);
+      console.error("Full error:", emailError);
       // Continue even if email fails - don't block the booking
+      // But we should log this prominently so it shows up in Vercel logs
     }
 
     return res.status(200).json({ ok: true });
