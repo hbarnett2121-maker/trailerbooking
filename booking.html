@@ -57,8 +57,8 @@
     .sheet{background:#fff;border-radius:16px;max-width:640px;width:100%;padding:14px;border:1px solid var(--border)}
     .field{display:flex;flex-direction:column;gap:6px}
     input,textarea,select{border:1px solid var(--border);border-radius:10px;padding:12px;font-size:16px;background:#fff}
-    .toast{position:fixed;right:14px;bottom:64px;background:var(--green);padding:10px 12px;border-radius:12px;
-      box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:14px}
+    .toast{position:fixed;right:14px;bottom:64px;background:var(--green);padding:14px 16px;border-radius:12px;
+      box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:14px;max-width:320px;line-height:1.4}
 
     /* SMALL SCREEN TWEAKS */
     @media (max-width:420px){
@@ -311,8 +311,8 @@
         // mark times as taken and show success
         const list = loadReservations(); list.push(record); saveReservations(list);
         $("modal").classList.remove("open");
-        const t = document.createElement("div"); t.className = "toast"; t.textContent = "Booking submitted!";
-        document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+        const t = document.createElement("div"); t.className = "toast"; t.textContent = "Thank you for your booking! We've received your request and will be in touch shortly with the next steps via email.";
+        document.body.appendChild(t); setTimeout(()=>t.remove(),5000);
         state.start=null; state.end=null; state.pickup=null; state.dropoff=null; state.reservations=list; draw();
       } catch (e) {
         alert("Could not submit booking. " + (e?.message || ""));
