@@ -2,10 +2,14 @@
   "version": 2,
   "builds": [
     { "src": "booking.html", "use": "@vercel/static" },
-    { "src": "api/book.js", "use": "@vercel/node" }
+    { "src": "reviews.html", "use": "@vercel/static" },
+    { "src": "api/book.js", "use": "@vercel/node" },
+    { "src": "api/reviews.js", "use": "@vercel/node" }
   ],
   "routes": [
     { "src": "/booking", "dest": "/booking.html" },
-    { "src": "/api/book", "dest": "/api/book.js" }
+    { "src": "/reviews", "dest": "/reviews.html" },
+    { "src": "/api/book", "dest": "/api/book.js" },
+    { "src": "/api/reviews", "dest": "/api/reviews.js" }
   ]
 }
