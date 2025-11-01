@@ -160,6 +160,54 @@
     const TRAILERS = ["5 x 10 Utility Trailer","6 x 12 Cargo Trailer","6 x 12 Car Hauler","7 x 20 Utility Trailer","7 x 16 Utility Pipe Trailer","7 x 16 Utility Ramp Trailer"];
     const HOURS = Array.from({length:13}, (_,i)=>6+i); // 6..18
     const STORAGE_KEY = "trailer_reservations_v1";
+
+    // Pricing structure
+    const PRICING = {
+      "6 x 12 Cargo Trailer": { hourly: 20, daily: 55, weekly: 300, monthly: 1900 },
+      "7 x 16 Utility Pipe Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
+      "7 x 20 Utility Trailer": { hourly: 30, daily: 75, weekly: 300, monthly: 1300 },
+      "6 x 12 Car Hauler": { hourly: 40, daily: 95, weekly: 600, monthly: 2000 },
+      "7 x 16 Utility Ramp Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
+      "5 x 10 Utility Trailer": { hourly: 15, daily: 45, weekly: 250, monthly: 750 }
+    };
+
+    function calculatePrice() {
+      if (!state.trailer || !state.start || !state.end || state.pickup === null || state.dropoff === null) {
+        return null;
+      }
+
+      const pricing = PRICING[state.trailer];
+      if (!pricing) return null;
+
+      // Calculate duration
+      const diffTime = Math.abs(state.end - state.start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const diffHours = (state.dropoff - state.pickup) + ((diffDays - 1) * 24);
+
+      let tier, price, breakdown;
+
+      if (diffDays >= 30) {
+        tier = "Monthly Rate";
+        price = pricing.monthly;
+        breakdown = `1 month`;
+      } else if (diffDays >= 7) {
+        tier = "Weekly Rate";
+        price = pricing.weekly;
+        breakdown = `1 week`;
+      } else if (diffDays > 1 || diffHours >= 24) {
+        tier = "Daily Rate";
+        price = pricing.daily * diffDays;
+        breakdown = `${diffDays} day${diffDays > 1 ? 's' : ''} × $${pricing.daily}`;
+      } else {
+        const hours = Math.max(diffHours, 2);
+        tier = "Hourly Rate (2 hr min)";
+        price = pricing.hourly * hours;
+        breakdown = `${hours} hour${hours > 1 ? 's' : ''} × $${pricing.hourly}`;
+      }
+
+      return { tier, price, breakdown };
+    }
+
     const $ = (id)=>document.getElementById(id);
     const fmtDate = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const timeLabel=(h)=>{const s=h>=12?"PM":"AM";const v=h%12===0?12:h%12;return `${v}:00 ${s}`};
@@ -275,8 +323,10 @@
       const ready = state.trailer && state.start && state.end &&
                     state.pickup!==null && state.dropoff!==null && state.dropoff>=state.pickup;
       $("bookBtn").disabled = !ready;
+
+      const priceInfo = calculatePrice();
       $("summary").textContent = ready
-        ? `${state.trailer} — ${fmtDate(state.start)} → ${fmtDate(state.end)}, ${timeLabel(state.pickup)} → ${timeLabel(state.dropoff)}`
+        ? `${state.trailer} — ${fmtDate(state.start)} → ${fmtDate(state.end)}, ${timeLabel(state.pickup)} → ${timeLabel(state.dropoff)}${priceInfo ? ` — Estimated: $${priceInfo.price}` : ''}`
         : 'Pick trailer, dates & times to book.';
     }
 
@@ -293,6 +343,17 @@
       add(state.trailer);
       add(`${fmtDate(state.start)} → ${fmtDate(state.end)}`);
       add(`${timeLabel(state.pickup)} → ${timeLabel(state.dropoff)}`);
+
+      // Add pricing info
+      const priceInfo = calculatePrice();
+      if (priceInfo) {
+        const priceDiv = document.createElement('div');
+        priceDiv.className = 'kv';
+        priceDiv.style.cssText = 'background:#e8f5e9;color:#2e7d32;font-weight:600;padding:12px;border-radius:6px';
+        priceDiv.innerHTML = `💰 Estimated Price: $${priceInfo.price}<br><small style="font-weight:400;opacity:0.8">${priceInfo.tier} • ${priceInfo.breakdown}</small>`;
+        $("kv").appendChild(priceDiv);
+      }
+
       $("modal").classList.add('open');
     };
     ["closeModal","cancel"].forEach(id=>$(id).onclick=()=>$("modal").classList.remove('open'));
