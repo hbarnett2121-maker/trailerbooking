@@ -276,17 +276,35 @@
 
       const hint = $("dateHint");
       if(state.start && !state.end) hint.textContent = `Start date: ${fmtDate(state.start)} — select end date.`;
-      else if(state.start && state.end) hint.textContent = `Selected: ${fmtDate(state.start)} to ${fmtDate(state.end)}`;
+      else if(state.start && state.end) {
+        if(sameDay(state.start, state.end)) {
+          hint.textContent = `Selected: ${fmtDate(state.start)} (same-day rental)`;
+        } else {
+          hint.textContent = `Selected: ${fmtDate(state.start)} to ${fmtDate(state.end)}`;
+        }
+      }
       else hint.textContent='';
     }
 
     function pickDate(date){
-      if(!state.start || (state.start && state.end)){
-        state.start = date; state.end=null; state.pickup=null; state.dropoff=null;
-      } else if(date < state.start){
-        state.end = state.start; state.start = date; state.pickup=null; state.dropoff=null;
+      if(!state.start || !state.end){
+        // No selection yet: set same-day rental by default
+        state.start = date; state.end = date; state.pickup=null; state.dropoff=null;
+      } else if(sameDay(state.start, state.end)){
+        // Currently same-day rental: extend range or keep same
+        if(sameDay(date, state.start)){
+          // Clicking same day: keep as same-day rental
+          state.end = date;
+        } else if(date < state.start){
+          // Earlier date: move start backward
+          state.start = date; state.pickup=null; state.dropoff=null;
+        } else {
+          // Later date: extend end forward
+          state.end = date; state.pickup=null; state.dropoff=null;
+        }
       } else {
-        state.end = date; state.pickup=null; state.dropoff=null;
+        // Currently multi-day range: reset to new same-day rental
+        state.start = date; state.end = date; state.pickup=null; state.dropoff=null;
       }
       draw();
     }
