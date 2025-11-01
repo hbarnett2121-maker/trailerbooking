@@ -1,6 +1,55 @@
 // api/book.js — CORS-safe booking endpoint with email notifications
 const nodemailer = require('nodemailer');
 
+// Pricing structure
+const PRICING = {
+  "6 x 12 Cargo Trailer": { hourly: 20, daily: 55, weekly: 300, monthly: 1900 },
+  "7 x 16 Utility Pipe Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
+  "7 x 20 Utility Trailer": { hourly: 30, daily: 75, weekly: 300, monthly: 1300 },
+  "6 x 12 Car Hauler": { hourly: 40, daily: 95, weekly: 600, monthly: 2000 },
+  "7 x 16 Utility Ramp Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
+  "5 x 10 Utility Trailer": { hourly: 15, daily: 45, weekly: 250, monthly: 750 }
+};
+
+function calculateRentalPrice(booking) {
+  const pricing = PRICING[booking.trailer];
+  if (!pricing) return null;
+
+  // Calculate duration
+  const start = new Date(booking.startDate);
+  const end = new Date(booking.endDate);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include both days
+  const diffHours = (booking.dropoffHour - booking.pickupHour) + ((diffDays - 1) * 24);
+
+  // Determine pricing tier and calculate
+  let tier, price, minHours;
+
+  if (diffDays >= 30) {
+    tier = "Monthly";
+    price = pricing.monthly;
+  } else if (diffDays >= 7) {
+    tier = "Weekly";
+    price = pricing.weekly;
+  } else if (diffDays > 1 || diffHours >= 24) {
+    tier = "Daily";
+    price = pricing.daily * diffDays;
+  } else {
+    tier = "Hourly (2 hour minimum)";
+    minHours = Math.max(diffHours, 2);
+    price = pricing.hourly * minHours;
+  }
+
+  return {
+    tier,
+    duration: diffDays > 1 ? `${diffDays} days` : `${diffHours} hours`,
+    suggestedPrice: `$${price}`,
+    breakdown: diffDays > 1
+      ? `${diffDays} days × $${tier === 'Daily' ? pricing.daily : price}`
+      : `${minHours || diffHours} hours × $${pricing.hourly}`
+  };
+}
+
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -32,6 +81,9 @@ async function sendBookingEmail(booking) {
 
   console.log(`Attempting to send email from ${process.env.EMAIL_USER} to hbarnett2121@gmail.com`);
 
+  // Calculate pricing
+  const priceInfo = calculateRentalPrice(booking);
+
   const emailContent = `
 NEW TRAILER BOOKING RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -42,6 +94,14 @@ BOOKING DETAILS:
 ▸ End Date: ${booking.endDate}
 ▸ Pickup Time: ${formatTime(booking.pickupHour)}
 ▸ Dropoff Time: ${formatTime(booking.dropoffHour)}
+
+PRICING:
+▸ Rental Duration: ${priceInfo?.duration || 'N/A'}
+▸ Pricing Tier: ${priceInfo?.tier || 'N/A'}
+▸ SUGGESTED PRICE: ${priceInfo?.suggestedPrice || 'N/A'}
+${priceInfo?.breakdown ? `▸ Calculation: ${priceInfo.breakdown}` : ''}
+
+→ Review booking and send QuickBooks invoice for ${priceInfo?.suggestedPrice || 'calculated amount'}
 
 CUSTOMER INFORMATION:
 ▸ First Name: ${booking.firstName}
