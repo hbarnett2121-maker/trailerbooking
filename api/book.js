@@ -1,5 +1,6 @@
 // api/book.js — CORS-safe booking endpoint with email notifications
 const nodemailer = require('nodemailer');
+const { createInvoice } = require('./quickbooks/invoice-utils');
 
 // Pricing structure
 const PRICING = {
@@ -56,7 +57,7 @@ function cors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-async function sendBookingEmail(booking) {
+async function sendBookingEmail(booking, invoiceData = null) {
   // Configure email transporter
   // You'll need to set these environment variables in Vercel:
   // EMAIL_HOST (e.g., smtp.gmail.com)
@@ -84,6 +85,20 @@ async function sendBookingEmail(booking) {
   // Calculate pricing
   const priceInfo = calculateRentalPrice(booking);
 
+  const invoiceSection = invoiceData ? `
+
+QUICKBOOKS INVOICE:
+▸ Invoice #: ${invoiceData.invoiceNumber}
+▸ Invoice Amount: $${invoiceData.totalAmount}
+▸ View Invoice: ${invoiceData.invoiceUrl}
+
+→ ACTION REQUIRED: Review the booking above, then send the invoice to the customer from QuickBooks.
+   The invoice has been created and is ready to send!
+` : `
+
+→ Review booking and send QuickBooks invoice for ${priceInfo?.suggestedPrice || 'calculated amount'}
+`;
+
   const emailContent = `
 NEW TRAILER BOOKING RECEIVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -100,9 +115,7 @@ PRICING:
 ▸ Pricing Tier: ${priceInfo?.tier || 'N/A'}
 ▸ SUGGESTED PRICE: ${priceInfo?.suggestedPrice || 'N/A'}
 ${priceInfo?.breakdown ? `▸ Calculation: ${priceInfo.breakdown}` : ''}
-
-→ Review booking and send QuickBooks invoice for ${priceInfo?.suggestedPrice || 'calculated amount'}
-
+${invoiceSection}
 CUSTOMER INFORMATION:
 ▸ First Name: ${booking.firstName}
 ▸ Last Name: ${booking.lastName}
@@ -172,9 +185,40 @@ module.exports = async (req, res) => {
 
     console.log("Booking received:", booking);
 
-    // Send email notification
+    let invoiceData = null;
+
+    // Create QuickBooks invoice if credentials are configured
+    if (process.env.QB_ACCESS_TOKEN && process.env.QB_REALM_ID) {
+      try {
+        const priceInfo = calculateRentalPrice(booking);
+
+        // Remove $ sign from price for QuickBooks
+        const numericPrice = parseInt(priceInfo.suggestedPrice.replace('$', ''));
+
+        invoiceData = await createInvoice(
+          booking,
+          {
+            ...priceInfo,
+            suggestedPrice: numericPrice
+          },
+          process.env.QB_ACCESS_TOKEN,
+          process.env.QB_REALM_ID,
+          process.env.QB_ENVIRONMENT || 'sandbox'
+        );
+
+        console.log("✓ QuickBooks invoice created:", invoiceData.invoiceNumber);
+      } catch (qbError) {
+        console.error("✗ QuickBooks invoice creation failed:", qbError.message);
+        console.error("Full error:", qbError);
+        // Continue even if invoice creation fails - don't block the booking
+      }
+    } else {
+      console.log("ℹ QuickBooks not configured - skipping invoice creation");
+    }
+
+    // Send email notification with invoice data if available
     try {
-      await sendBookingEmail(booking);
+      await sendBookingEmail(booking, invoiceData);
       console.log("✓ Email sent successfully to hbarnett2121@gmail.com");
     } catch (emailError) {
       console.error("✗ Email sending failed:", emailError.message);
