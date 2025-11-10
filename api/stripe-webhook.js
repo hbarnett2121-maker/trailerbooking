@@ -7,9 +7,10 @@ function formatTime(hour) {
   return `${displayHour}:00 ${period}`;
 }
 
-async function sendBookingEmail(booking, paymentInfo) {
+async function sendPaymentConfirmationEmail(metadata, paymentId) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Email configuration missing');
+    console.log('Email not configured');
+    return;
   }
 
   const transporter = nodemailer.createTransport({
@@ -23,68 +24,37 @@ async function sendBookingEmail(booking, paymentInfo) {
   });
 
   const emailContent = `
-NEW TRAILER BOOKING RECEIVED (PAID)
+✅ PAYMENT CONFIRMED - Booking Complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 Payment has been successfully processed via Stripe!
 
 BOOKING DETAILS:
-▸ Trailer: ${booking.trailer}
-▸ Start Date: ${booking.startDate}
-▸ End Date: ${booking.endDate}
-▸ Pickup Time: ${formatTime(booking.pickupHour)}
-▸ Dropoff Time: ${formatTime(booking.dropoffHour)}
+▸ Trailer: ${metadata.trailer}
+▸ Customer: ${metadata.firstName} ${metadata.lastName}
+▸ Email: ${metadata.email}
+▸ Phone: ${metadata.phone}
+▸ Start Date: ${metadata.startDate}
+▸ End Date: ${metadata.endDate}
+▸ Pickup Time: ${formatTime(parseInt(metadata.pickupHour))}
+▸ Dropoff Time: ${formatTime(parseInt(metadata.dropoffHour))}
 
-PAYMENT CONFIRMED:
-▸ Amount Paid: $${paymentInfo.amount}
-▸ Payment ID: ${paymentInfo.paymentId}
-▸ Pricing Tier: ${paymentInfo.tier}
-▸ Calculation: ${paymentInfo.breakdown}
-
-CUSTOMER INFORMATION:
-▸ First Name: ${booking.firstName}
-▸ Last Name: ${booking.lastName}
-▸ Email: ${booking.email}
-▸ Phone: ${booking.phone}
-▸ Date of Birth: ${booking.dob}
-▸ What are you hauling: ${booking.reason}
-▸ Trailer Experience: ${booking.trailerExperience === 'yes' ? 'Yes, I\'ve hauled a trailer before' : 'No, I haven\'t. Can I get a walkthrough?'}
-
-BOOKING TIMESTAMP:
-▸ Created At: ${booking.createdAt}
+PAYMENT INFO:
+▸ Amount Paid: $${metadata.price}
+▸ Payment ID: ${paymentId}
+▸ Pricing Tier: ${metadata.tier}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-This booking was automatically submitted and PAID via the Trailer Booking System.
-
-Attachments:
-▸ Driver's license photo
-▸ Proof of insurance
+This booking is CONFIRMED and PAID.
+Driver's license and insurance documents were sent in the previous "PENDING" email.
   `.trim();
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: 'hbarnett2121@gmail.com',
-    subject: `💰 PAID BOOKING: ${booking.trailer} - ${booking.firstName} ${booking.lastName} ($${paymentInfo.amount})`,
+    subject: `✅ PAID: ${metadata.trailer} - ${metadata.firstName} ${metadata.lastName} ($${metadata.price})`,
     text: emailContent,
   };
-
-  // Attach documents
-  const attachments = [];
-  if (booking.driversLicense && booking.driversLicenseFilename) {
-    attachments.push({
-      filename: booking.driversLicenseFilename,
-      content: booking.driversLicense,
-      encoding: 'base64'
-    });
-  }
-  if (booking.proofOfInsurance && booking.proofOfInsuranceFilename) {
-    attachments.push({
-      filename: booking.proofOfInsuranceFilename,
-      content: booking.proofOfInsurance,
-      encoding: 'base64'
-    });
-  }
-  if (attachments.length > 0) {
-    mailOptions.attachments = attachments;
-  }
 
   await transporter.sendMail(mailOptions);
 }
@@ -118,20 +88,14 @@ module.exports = async (req, res) => {
     const session = event.data.object;
 
     try {
-      // Extract booking data from metadata
-      const booking = JSON.parse(session.metadata.bookingData);
-      const paymentInfo = {
-        amount: session.metadata.price,
-        paymentId: session.payment_intent,
-        tier: session.metadata.tier,
-        breakdown: session.metadata.breakdown
-      };
+      console.log('Payment successful for booking:', session.metadata.trailer);
 
-      console.log('Payment successful for booking:', booking.trailer);
-
-      // Send email notification
-      await sendBookingEmail(booking, paymentInfo);
-      console.log('✓ Email sent successfully');
+      // Send payment confirmation email
+      await sendPaymentConfirmationEmail(
+        session.metadata,
+        session.payment_intent
+      );
+      console.log('✓ Payment confirmation email sent');
 
     } catch (error) {
       console.error('Error processing webhook:', error);
