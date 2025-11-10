@@ -147,79 +147,112 @@ Attachments:
 }
 
 module.exports = async (req, res) => {
-  if (req.method === "OPTIONS") { cors(res); return res.status(204).end(); }
-  if (req.method !== "POST") { cors(res); return res.status(405).json({ error: "Method not allowed" }); }
+  // Set CORS headers first
+  cors(res);
+
+  if (req.method === "OPTIONS") { return res.status(204).end(); }
+  if (req.method !== "POST") { return res.status(405).json({ error: "Method not allowed" }); }
 
   try {
-    cors(res);
+    console.log('=== CREATE CHECKOUT START ===');
 
+    // Check Stripe key
     if (!process.env.STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: "Stripe not configured" });
+      console.error('STRIPE_SECRET_KEY not found in environment');
+      return res.status(500).json({ error: "Stripe not configured - missing API key" });
+    }
+    console.log('Stripe key exists:', process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...');
+
+    // Initialize Stripe
+    let stripe;
+    try {
+      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      console.log('Stripe initialized');
+    } catch (stripeError) {
+      console.error('Stripe initialization failed:', stripeError);
+      return res.status(500).json({ error: "Stripe initialization failed: " + stripeError.message });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const booking = req.body;
+    console.log('Booking received:', { trailer: booking.trailer, email: booking.email });
 
     // Calculate price
     const priceInfo = calculateRentalPrice(booking);
     if (!priceInfo) {
+      console.error('Price calculation failed for trailer:', booking.trailer);
       return res.status(400).json({ error: "Invalid trailer or pricing" });
     }
+    console.log('Price calculated:', priceInfo);
 
-    // Send email with booking details and documents (don't wait for it)
-    sendPendingPaymentEmail(booking, priceInfo).catch(err =>
-      console.error('Email error:', err)
-    );
+    // Send email with booking details and documents (don't let this block)
+    sendPendingPaymentEmail(booking, priceInfo).catch(err => {
+      console.error('Email error (non-blocking):', err.message);
+    });
 
     // Create minimal metadata without images (to avoid size limits)
     const bookingMetadata = {
-      trailer: booking.trailer,
-      startDate: booking.startDate,
-      endDate: booking.endDate,
-      pickupHour: booking.pickupHour.toString(),
-      dropoffHour: booking.dropoffHour.toString(),
-      firstName: booking.firstName,
-      lastName: booking.lastName,
-      email: booking.email,
-      phone: booking.phone,
-      dob: booking.dob,
-      reason: booking.reason.substring(0, 500), // Limit length
-      trailerExperience: booking.trailerExperience,
-      createdAt: booking.createdAt,
+      trailer: booking.trailer || '',
+      startDate: booking.startDate || '',
+      endDate: booking.endDate || '',
+      pickupHour: (booking.pickupHour || 0).toString(),
+      dropoffHour: (booking.dropoffHour || 0).toString(),
+      firstName: booking.firstName || '',
+      lastName: booking.lastName || '',
+      email: booking.email || '',
+      phone: booking.phone || '',
+      dob: booking.dob || '',
+      reason: (booking.reason || '').substring(0, 500),
+      trailerExperience: booking.trailerExperience || '',
+      createdAt: booking.createdAt || new Date().toISOString(),
       price: priceInfo.price.toString(),
       tier: priceInfo.tier,
-      // Store images separately (not in metadata)
       hasDriversLicense: booking.driversLicense ? 'yes' : 'no',
       hasInsurance: booking.proofOfInsurance ? 'yes' : 'no'
     };
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${booking.trailer} Rental`,
-              description: `${booking.startDate} to ${booking.endDate} (${formatTime(booking.pickupHour)} - ${formatTime(booking.dropoffHour)})\n${priceInfo.tier} - ${priceInfo.breakdown}`,
-            },
-            unit_amount: priceInfo.price * 100, // Stripe uses cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `https://trailerbookingrrwal.vercel.app/booking?success=true`,
-      cancel_url: `https://trailerbookingrrwal.vercel.app/booking?canceled=true`,
-      customer_email: booking.email,
-      metadata: bookingMetadata
-    });
+    console.log('Creating Stripe session with metadata keys:', Object.keys(bookingMetadata));
 
+    // Create Stripe checkout session
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${booking.trailer} Rental`,
+                description: `${booking.startDate} to ${booking.endDate} (${formatTime(booking.pickupHour)} - ${formatTime(booking.dropoffHour)})\n${priceInfo.tier} - ${priceInfo.breakdown}`,
+              },
+              unit_amount: priceInfo.price * 100, // Stripe uses cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `https://trailerbookingrrwal.vercel.app/booking?success=true`,
+        cancel_url: `https://trailerbookingrrwal.vercel.app/booking?canceled=true`,
+        customer_email: booking.email,
+        metadata: bookingMetadata
+      });
+      console.log('Stripe session created:', session.id);
+    } catch (stripeError) {
+      console.error('Stripe session creation failed:', stripeError);
+      return res.status(500).json({ error: "Stripe session failed: " + stripeError.message });
+    }
+
+    console.log('=== CREATE CHECKOUT SUCCESS ===');
     return res.status(200).json({ url: session.url });
+
   } catch (error) {
-    console.error('Stripe checkout error:', error);
-    cors(res);
-    return res.status(500).json({ error: error.message });
+    console.error('=== CREATE CHECKOUT ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({
+      error: error.message,
+      type: error.constructor.name
+    });
   }
 };
