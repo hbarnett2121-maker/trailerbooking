@@ -482,13 +482,10 @@
       if(!record.trailerExperience) missing.push('Trailer experience');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 
-      // Create Stripe checkout session and open in new window
+      // Create Stripe checkout session and redirect to payment
       try {
         $("submit").disabled = true;
-        $("submit").textContent = "Opening payment...";
-
-        // IMPORTANT: Open window IMMEDIATELY (before async fetch) to avoid popup blocker
-        const stripeWindow = window.open('about:blank', '_blank');
+        $("submit").textContent = "Redirecting to payment...";
 
         console.log('Sending booking to create-checkout API...');
         const resp = await fetch(CHECKOUT_API_ENDPOINT, {
@@ -501,7 +498,6 @@
         if (!resp.ok) {
           const errorText = await resp.text();
           console.error('Error response:', errorText);
-          if (stripeWindow) stripeWindow.close();
           throw new Error("HTTP " + resp.status);
         }
 
@@ -510,45 +506,14 @@
 
         if (!data.url) {
           console.error('No URL in response!');
-          if (stripeWindow) stripeWindow.close();
           throw new Error("No payment URL received");
         }
 
-        console.log('Redirecting to payment:', data.url);
+        console.log('Redirecting to Stripe checkout:', data.url);
 
-        if (stripeWindow && !stripeWindow.closed) {
-          // Try different methods to update window location (mobile browsers are picky)
-          try {
-            stripeWindow.location.href = data.url;
-          } catch (e) {
-            console.error('location.href failed, trying replace:', e);
-            try {
-              stripeWindow.location.replace(data.url);
-            } catch (e2) {
-              console.error('replace failed, closing and redirecting:', e2);
-              stripeWindow.close();
-              window.location.href = data.url;
-              return;
-            }
-          }
+        // Redirect to Stripe checkout (works on all devices)
+        window.location.href = data.url;
 
-          // Success - close modal and reset
-          $("modal").classList.remove("open");
-          $("submit").disabled = false;
-          $("submit").textContent = "Pay & Book";
-
-          // Show message
-          const t = document.createElement("div");
-          t.className = "toast";
-          t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#06F713;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5;font-weight:600";
-          t.textContent = "Payment window opened! Complete your payment in the new tab, then return here.";
-          document.body.appendChild(t);
-          setTimeout(() => t.remove(), 8000);
-        } else {
-          // Popup was blocked - redirect current page to payment
-          console.log('Popup blocked, redirecting current page');
-          window.location.href = data.url;
-        }
       } catch (e) {
         console.error('Payment session error:', e);
         $("submit").disabled = false;
