@@ -487,6 +487,14 @@
         $("submit").disabled = true;
         $("submit").textContent = "Opening payment...";
 
+        // IMPORTANT: Open window IMMEDIATELY (before async fetch) to avoid popup blocker
+        const stripeWindow = window.open('about:blank', '_blank');
+
+        if (!stripeWindow) {
+          // Popup was blocked, fallback to redirect
+          alert('Please allow popups for this site, or click OK to redirect to payment page.');
+        }
+
         console.log('Sending booking to create-checkout API...');
         const resp = await fetch(CHECKOUT_API_ENDPOINT, {
           method: "POST",
@@ -498,6 +506,7 @@
         if (!resp.ok) {
           const errorText = await resp.text();
           console.error('Error response:', errorText);
+          if (stripeWindow) stripeWindow.close();
           throw new Error("HTTP " + resp.status);
         }
 
@@ -506,19 +515,16 @@
 
         if (!data.url) {
           console.error('No URL in response!');
+          if (stripeWindow) stripeWindow.close();
           throw new Error("No payment URL received");
         }
 
-        console.log('Opening Stripe in new window:', data.url);
+        console.log('Redirecting popup to:', data.url);
 
-        // Open Stripe checkout in new window/tab
-        const stripeWindow = window.open(data.url, '_blank');
+        if (stripeWindow) {
+          // Update the blank window to Stripe checkout URL
+          stripeWindow.location = data.url;
 
-        if (!stripeWindow || stripeWindow.closed || typeof stripeWindow.closed == 'undefined') {
-          // Popup was blocked, fallback to redirect
-          alert('Please allow popups for this site, or click OK to redirect to payment page.');
-          window.location.assign(data.url);
-        } else {
           // Success - close modal and reset
           $("modal").classList.remove("open");
           $("submit").disabled = false;
@@ -531,6 +537,9 @@
           t.textContent = "Payment window opened! Complete your payment in the new tab, then return here.";
           document.body.appendChild(t);
           setTimeout(() => t.remove(), 8000);
+        } else {
+          // Fallback to redirect if popup blocked
+          window.location.assign(data.url);
         }
       } catch (e) {
         console.error('Payment session error:', e);
