@@ -487,21 +487,35 @@
         $("submit").disabled = true;
         $("submit").textContent = "Loading payment...";
 
+        console.log('Sending booking to create-checkout API...');
         const resp = await fetch(CHECKOUT_API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(record)
         });
 
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        console.log('Response status:', resp.status);
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          console.error('Error response:', errorText);
+          throw new Error("HTTP " + resp.status);
+        }
 
         const data = await resp.json();
+        console.log('Response data:', data);
 
+        if (!data.url) {
+          console.error('No URL in response!');
+          throw new Error("No payment URL received");
+        }
+
+        console.log('Redirecting to:', data.url);
         // Redirect to Stripe checkout
         window.location.href = data.url;
       } catch (e) {
+        console.error('Payment session error:', e);
         $("submit").disabled = false;
-        $("submit").textContent = "Submit";
+        $("submit").textContent = "Pay & Book";
         alert("Could not create payment session. " + (e?.message || ""));
       }
     };
