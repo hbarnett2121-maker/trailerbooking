@@ -510,8 +510,8 @@
         }
 
         console.log('Redirecting to:', data.url);
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
+        // Use window.location.assign for better mobile compatibility
+        window.location.assign(data.url);
       } catch (e) {
         console.error('Payment session error:', e);
         $("submit").disabled = false;
