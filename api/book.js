@@ -1,6 +1,6 @@
 // api/book.js — CORS-safe booking endpoint with email notifications
+// NOTE: This endpoint is deprecated. New bookings use Stripe checkout (/api/create-checkout)
 const nodemailer = require('nodemailer');
-const { createInvoice } = require('./quickbooks/invoice-utils');
 
 // Pricing structure
 const PRICING = {
@@ -57,15 +57,8 @@ function cors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-async function sendBookingEmail(booking, invoiceData = null) {
+async function sendBookingEmail(booking) {
   // Configure email transporter
-  // You'll need to set these environment variables in Vercel:
-  // EMAIL_HOST (e.g., smtp.gmail.com)
-  // EMAIL_PORT (e.g., 587)
-  // EMAIL_USER (your email address)
-  // EMAIL_PASS (your email password or app-specific password)
-
-  // Validate required environment variables
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error('Email configuration missing: EMAIL_USER and EMAIL_PASS must be set in Vercel environment variables');
   }
@@ -85,23 +78,12 @@ async function sendBookingEmail(booking, invoiceData = null) {
   // Calculate pricing
   const priceInfo = calculateRentalPrice(booking);
 
-  const invoiceSection = invoiceData ? `
-
-QUICKBOOKS INVOICE:
-▸ Invoice #: ${invoiceData.invoiceNumber}
-▸ Invoice Amount: $${invoiceData.totalAmount}
-▸ View Invoice: ${invoiceData.invoiceUrl}
-
-→ ACTION REQUIRED: Review the booking above, then send the invoice to the customer from QuickBooks.
-   The invoice has been created and is ready to send!
-` : `
-
-→ Review booking and send QuickBooks invoice for ${priceInfo?.suggestedPrice || 'calculated amount'}
-`;
-
   const emailContent = `
-NEW TRAILER BOOKING RECEIVED
+NEW TRAILER BOOKING RECEIVED (LEGACY - NO PAYMENT)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  NOTE: This booking came through the old system (no payment collected).
+    New bookings should use Stripe payment integration.
 
 BOOKING DETAILS:
 ▸ Trailer: ${booking.trailer}
@@ -115,7 +97,7 @@ PRICING:
 ▸ Pricing Tier: ${priceInfo?.tier || 'N/A'}
 ▸ SUGGESTED PRICE: ${priceInfo?.suggestedPrice || 'N/A'}
 ${priceInfo?.breakdown ? `▸ Calculation: ${priceInfo.breakdown}` : ''}
-${invoiceSection}
+
 CUSTOMER INFORMATION:
 ▸ First Name: ${booking.firstName}
 ▸ Last Name: ${booking.lastName}
@@ -183,48 +165,15 @@ module.exports = async (req, res) => {
     cors(res);
     const booking = req.body;
 
-    console.log("Booking received:", booking);
+    console.log("Booking received (legacy endpoint):", booking);
 
-    let invoiceData = null;
-
-    // Create QuickBooks invoice if credentials are configured
-    if (process.env.QB_ACCESS_TOKEN && process.env.QB_REALM_ID) {
-      try {
-        const priceInfo = calculateRentalPrice(booking);
-
-        // Remove $ sign from price for QuickBooks
-        const numericPrice = parseInt(priceInfo.suggestedPrice.replace('$', ''));
-
-        invoiceData = await createInvoice(
-          booking,
-          {
-            ...priceInfo,
-            suggestedPrice: numericPrice
-          },
-          process.env.QB_ACCESS_TOKEN,
-          process.env.QB_REALM_ID,
-          process.env.QB_ENVIRONMENT || 'sandbox'
-        );
-
-        console.log("✓ QuickBooks invoice created:", invoiceData.invoiceNumber);
-      } catch (qbError) {
-        console.error("✗ QuickBooks invoice creation failed:", qbError.message);
-        console.error("Full error:", qbError);
-        // Continue even if invoice creation fails - don't block the booking
-      }
-    } else {
-      console.log("ℹ QuickBooks not configured - skipping invoice creation");
-    }
-
-    // Send email notification with invoice data if available
+    // Send email notification
     try {
-      await sendBookingEmail(booking, invoiceData);
+      await sendBookingEmail(booking);
       console.log("✓ Email sent successfully to hbarnett2121@gmail.com");
     } catch (emailError) {
       console.error("✗ Email sending failed:", emailError.message);
       console.error("Full error:", emailError);
-      // Continue even if email fails - don't block the booking
-      // But we should log this prominently so it shows up in Vercel logs
     }
 
     return res.status(200).json({ ok: true });
