@@ -52,9 +52,12 @@
     .bar .primary{min-width:44%;}
 
     /* MODAL */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
     .modal.open{display:flex}
-    .sheet{background:#fff;border-radius:16px;max-width:640px;width:100%;padding:14px;border:1px solid var(--border)}
+    .sheet{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border)}
+    .sheet-header{padding:14px;border-bottom:1px solid var(--border)}
+    .sheet-content{padding:14px;overflow-y:auto;flex:1}
+    .sheet-footer{padding:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
     .field{display:flex;flex-direction:column;gap:6px}
     input,textarea,select{border:1px solid var(--border);border-radius:10px;padding:12px;font-size:16px;background:#fff}
     .toast{position:fixed;right:14px;bottom:64px;background:var(--green);padding:14px 16px;border-radius:12px;
@@ -114,38 +117,42 @@
   <!-- BOOKING MODAL -->
   <div class="modal" id="modal">
     <div class="sheet">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-weight:700">Complete Your Booking</div>
-        <button class="btn" id="closeModal">✕</button>
-      </div>
-      <div class="kvs" id="kv"></div>
-      <div class="grid" style="grid-template-columns:1fr;gap:12px">
-        <div class="field"><label>First name</label><input id="fn" placeholder="Jane"></div>
-        <div class="field"><label>Last name</label><input id="ln" placeholder="Doe"></div>
-        <div class="field"><label>Email</label><input id="email" type="email" placeholder="jane@example.com"></div>
-        <div class="field"><label>Phone number</label><input id="phone" type="tel" placeholder="(555) 123-4567"></div>
-        <div class="field"><label>Date of birth</label><input id="dob" type="date"></div>
-        <div class="field">
-          <label>Upload driver's license</label>
-          <input id="license" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
-          <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your driver's license (JPEG or PNG)</div>
-        </div>
-        <div class="field">
-          <label>Upload proof of insurance</label>
-          <input id="insurance" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
-          <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your insurance card or document (JPEG or PNG)</div>
-        </div>
-        <div class="field"><label>What are you hauling with this trailer?</label><textarea id="reason" rows="4" placeholder="Furniture, appliances, landscaping materials, etc."></textarea></div>
-        <div class="field">
-          <label>Have you hauled a trailer before?</label>
-          <select id="trailerExperience" style="padding:12px;border:2px solid #e0e0e0;border-radius:8px;width:100%;font-size:16px">
-            <option value="">Select an option...</option>
-            <option value="yes">Yes, I've hauled a trailer before</option>
-            <option value="no">No, I haven't. Can I get a walkthrough?</option>
-          </select>
+      <div class="sheet-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Complete Your Booking</div>
+          <button class="btn" id="closeModal" style="padding:4px 8px;min-height:32px">✕</button>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+      <div class="sheet-content">
+        <div class="kvs" id="kv" style="margin-bottom:12px"></div>
+        <div class="grid" style="grid-template-columns:1fr;gap:12px">
+          <div class="field"><label>First name</label><input id="fn" placeholder="Jane"></div>
+          <div class="field"><label>Last name</label><input id="ln" placeholder="Doe"></div>
+          <div class="field"><label>Email</label><input id="email" type="email" placeholder="jane@example.com"></div>
+          <div class="field"><label>Phone number</label><input id="phone" type="tel" placeholder="(555) 123-4567"></div>
+          <div class="field"><label>Date of birth</label><input id="dob" type="date"></div>
+          <div class="field">
+            <label>Upload driver's license</label>
+            <input id="license" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
+            <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your driver's license (JPEG or PNG)</div>
+          </div>
+          <div class="field">
+            <label>Upload proof of insurance</label>
+            <input id="insurance" type="file" accept="image/*" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:100%">
+            <div style="font-size:12px;color:#666;margin-top:4px">Please upload a clear photo of your insurance card or document (JPEG or PNG)</div>
+          </div>
+          <div class="field"><label>What are you hauling with this trailer?</label><textarea id="reason" rows="3" placeholder="Furniture, appliances, landscaping materials, etc."></textarea></div>
+          <div class="field">
+            <label>Have you hauled a trailer before?</label>
+            <select id="trailerExperience" style="padding:12px;border:2px solid #e0e0e0;border-radius:8px;width:100%;font-size:16px">
+              <option value="">Select an option...</option>
+              <option value="yes">Yes, I've hauled a trailer before</option>
+              <option value="no">No, I haven't. Can I get a walkthrough?</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
         <button class="btn" id="cancel">Cancel</button>
         <button class="btn primary" id="submit">Pay & Book</button>
       </div>
