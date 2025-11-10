@@ -419,6 +419,8 @@
     }
 
     $("submit").onclick = async ()=>{
+      console.log('=== SUBMIT BUTTON CLICKED ===');
+
       // Get license file and compress/convert to base64 if present
       const licenseFile = $("license").files[0];
       let licenseData = null;
@@ -426,10 +428,13 @@
 
       if (licenseFile) {
         try {
+          console.log('Processing driver license image...');
           // Compress and resize image
           licenseData = await compressImage(licenseFile);
           licenseFilename = licenseFile.name.replace(/\.[^/.]+$/, '.jpg'); // Change extension to .jpg
+          console.log('License processed:', licenseFilename);
         } catch (error) {
+          console.error('License processing error:', error);
           alert('Failed to process driver\'s license image. Please try a different photo.');
           return;
         }
@@ -442,10 +447,13 @@
 
       if (insuranceFile) {
         try {
+          console.log('Processing insurance image...');
           // Compress and resize image
           insuranceData = await compressImage(insuranceFile);
           insuranceFilename = insuranceFile.name.replace(/\.[^/.]+$/, '.jpg'); // Change extension to .jpg
+          console.log('Insurance processed:', insuranceFilename);
         } catch (error) {
+          console.error('Insurance processing error:', error);
           alert('Failed to process insurance image. Please try a different photo.');
           return;
         }
@@ -470,6 +478,14 @@
         trailerExperience: $("trailerExperience").value,
         createdAt: new Date().toISOString(),
       };
+
+      console.log('Booking record created:', {
+        trailer: record.trailer,
+        email: record.email,
+        hasLicense: !!record.driversLicense,
+        hasInsurance: !!record.proofOfInsurance
+      });
+
       const missing = [];
       if(!record.firstName) missing.push('First name');
       if(!record.lastName) missing.push('Last name');
@@ -480,45 +496,74 @@
       if(!record.proofOfInsurance) missing.push('Proof of insurance photo');
       if(!record.reason) missing.push('What are you hauling');
       if(!record.trailerExperience) missing.push('Trailer experience');
-      if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
+      if(missing.length){
+        console.error('Missing fields:', missing);
+        alert('Please fill: '+missing.join(', '));
+        return;
+      }
 
       // Create Stripe checkout session and redirect to payment
       try {
         $("submit").disabled = true;
-        $("submit").textContent = "Redirecting to payment...";
+        $("submit").textContent = "Creating payment session...";
+        console.log('Calling API:', CHECKOUT_API_ENDPOINT);
 
-        console.log('Sending booking to create-checkout API...');
         const resp = await fetch(CHECKOUT_API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(record)
+        }).catch(err => {
+          console.error('FETCH ERROR (network/CORS):', err);
+          throw new Error('Network error: ' + err.message);
         });
 
-        console.log('Response status:', resp.status);
+        console.log('Response received. Status:', resp.status);
+        console.log('Response headers:', Array.from(resp.headers.entries()));
+
         if (!resp.ok) {
-          const errorText = await resp.text();
-          console.error('Error response:', errorText);
-          throw new Error("HTTP " + resp.status);
+          let errorText = 'Unknown error';
+          try {
+            errorText = await resp.text();
+            console.error('Error response body:', errorText);
+          } catch (e) {
+            console.error('Could not read error response:', e);
+          }
+          throw new Error(`Server error (${resp.status}): ${errorText}`);
         }
 
-        const data = await resp.json();
-        console.log('Response data:', data);
-
-        if (!data.url) {
-          console.error('No URL in response!');
-          throw new Error("No payment URL received");
+        let data;
+        try {
+          data = await resp.json();
+          console.log('Response data:', data);
+        } catch (e) {
+          console.error('Failed to parse JSON response:', e);
+          throw new Error('Invalid response from server');
         }
 
-        console.log('Redirecting to Stripe checkout:', data.url);
+        if (!data || !data.url) {
+          console.error('No URL in response! Response:', data);
+          throw new Error("Server didn't return a payment URL");
+        }
 
-        // Redirect to Stripe checkout (works on all devices)
-        window.location.href = data.url;
+        console.log('SUCCESS! Redirecting to:', data.url);
+        $("submit").textContent = "Redirecting to Stripe...";
+
+        // Give user visual feedback before redirect
+        setTimeout(() => {
+          console.log('Executing redirect NOW...');
+          window.location.href = data.url;
+        }, 500);
 
       } catch (e) {
-        console.error('Payment session error:', e);
+        console.error('=== PAYMENT ERROR ===');
+        console.error('Error type:', e.constructor.name);
+        console.error('Error message:', e.message);
+        console.error('Full error:', e);
+
         $("submit").disabled = false;
         $("submit").textContent = "Pay & Book";
-        alert("Could not create payment session. " + (e?.message || ""));
+
+        alert("Payment setup failed:\n\n" + e.message + "\n\nCheck browser console (F12) for details.");
       }
     };
 
