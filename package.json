@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "nodemailer": "^6.9.7",
-    "intuit-oauth": "^4.1.0",
-    "axios": "^1.6.2"
+    "stripe": "^14.7.0"
   },
   "keywords": [
     "booking",

@@ -147,14 +147,14 @@
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
         <button class="btn" id="cancel">Cancel</button>
-        <button class="btn primary" id="submit">Submit</button>
+        <button class="btn primary" id="submit">Pay & Book</button>
       </div>
     </div>
   </div>
 
   <script>
     // ===== SET THIS TO YOUR LIVE HTTPS ENDPOINT =====
-    const BOOKING_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/api/book";
+    const CHECKOUT_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/api/create-checkout";
 
     // Data / utils
     const TRAILERS = ["5 x 10 Utility Trailer","6 x 12 Cargo Trailer","6 x 12 Car Hauler","7 x 20 Utility Trailer","7 x 16 Utility Pipe Trailer","7 x 16 Utility Ramp Trailer"];
@@ -475,30 +475,58 @@
       if(!record.trailerExperience) missing.push('Trailer experience');
       if(missing.length){ alert('Please fill: '+missing.join(', ')); return; }
 
-      // inside your "Submit" button onclick handler:
+      // Create Stripe checkout session and redirect to payment
       try {
-        const resp = await fetch(BOOKING_API_ENDPOINT, {
+        $("submit").disabled = true;
+        $("submit").textContent = "Loading payment...";
+
+        const resp = await fetch(CHECKOUT_API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(record)
         });
 
-
         if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-        // mark times as taken and show success
-        const list = loadReservations(); list.push(record); saveReservations(list);
-        $("modal").classList.remove("open");
-        const t = document.createElement("div"); t.className = "toast"; t.textContent = "Thank you for your booking! We've received your request and will be in touch shortly with the next steps via email.";
-        document.body.appendChild(t); setTimeout(()=>t.remove(),5000);
-        state.start=null; state.end=null; state.pickup=null; state.dropoff=null; state.reservations=list; draw();
+        const data = await resp.json();
+
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
       } catch (e) {
-        alert("Could not submit booking. " + (e?.message || ""));
+        $("submit").disabled = false;
+        $("submit").textContent = "Submit";
+        alert("Could not create payment session. " + (e?.message || ""));
       }
     };
 
     // Init
     draw();
+
+    // Handle return from Stripe checkout
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#06F713;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5;font-weight:600";
+      t.textContent = "🎉 Payment successful! Your trailer booking is confirmed. Check your email for details.";
+      document.body.appendChild(t);
+      setTimeout(() => {
+        t.remove();
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 8000);
+    } else if (urlParams.get('canceled') === 'true') {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#ff6b6b;color:white;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5";
+      t.textContent = "Payment was canceled. You can try booking again when you're ready.";
+      document.body.appendChild(t);
+      setTimeout(() => {
+        t.remove();
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 6000);
+    }
   </script>
 </body>
 </html>
