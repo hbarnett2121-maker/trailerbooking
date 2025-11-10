@@ -62,6 +62,10 @@
     input,textarea,select{border:1px solid var(--border);border-radius:10px;padding:12px;font-size:16px;background:#fff}
     .toast{position:fixed;right:14px;bottom:64px;background:var(--green);padding:14px 16px;border-radius:12px;
       box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:14px;max-width:320px;line-height:1.4}
+    .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:2000;flex-direction:column;color:white}
+    .loading-overlay.show{display:flex}
+    .spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,.3);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
     /* SMALL SCREEN TWEAKS */
     @media (max-width:420px){
@@ -157,6 +161,13 @@
         <button class="btn primary" id="submit">Pay & Book</button>
       </div>
     </div>
+  </div>
+
+  <!-- LOADING OVERLAY FOR MOBILE REDIRECT -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div style="margin-top:20px;font-size:18px;font-weight:600">Redirecting to payment...</div>
+    <div style="margin-top:8px;font-size:14px;opacity:0.8">Please wait</div>
   </div>
 
   <script>
@@ -504,6 +515,9 @@
 
       // Create Stripe checkout session and redirect to payment
       try {
+        // Prevent modal from closing during process
+        $("closeModal").disabled = true;
+        $("cancel").disabled = true;
         $("submit").disabled = true;
         $("submit").textContent = "Creating payment session...";
         console.log('Calling API:', CHECKOUT_API_ENDPOINT);
@@ -545,14 +559,39 @@
           throw new Error("Server didn't return a payment URL");
         }
 
-        console.log('SUCCESS! Redirecting to:', data.url);
-        $("submit").textContent = "Redirecting to Stripe...";
+        console.log('SUCCESS! Got payment URL:', data.url);
 
-        // Give user visual feedback before redirect
-        setTimeout(() => {
-          console.log('Executing redirect NOW...');
+        // Show loading overlay and close modal
+        $("modal").classList.remove('open');
+        $("loadingOverlay").classList.add('show');
+
+        // Mobile browsers need immediate redirect (no setTimeout)
+        console.log('Attempting redirect to Stripe...');
+
+        // Store URL in case redirect fails
+        window.stripeCheckoutUrl = data.url;
+
+        // Try immediate redirect (best for mobile)
+        try {
           window.location.href = data.url;
-        }, 500);
+        } catch (e) {
+          console.error('Redirect method 1 failed:', e);
+          try {
+            window.location.replace(data.url);
+          } catch (e2) {
+            console.error('Redirect method 2 failed:', e2);
+            // Fallback: show manual button
+            $("loadingOverlay").innerHTML = `
+              <div style="text-align:center;max-width:90%;padding:20px">
+                <div style="font-size:20px;margin-bottom:16px">⚠️ Redirect Blocked</div>
+                <div style="font-size:16px;margin-bottom:20px">Your browser blocked the automatic redirect.</div>
+                <button onclick="window.location.href='${data.url}'" style="background:var(--green);color:black;font-weight:700;font-size:18px;padding:16px 32px;border:none;border-radius:12px;cursor:pointer">
+                  Continue to Payment
+                </button>
+              </div>
+            `;
+          }
+        }
 
       } catch (e) {
         console.error('=== PAYMENT ERROR ===');
@@ -560,6 +599,11 @@
         console.error('Error message:', e.message);
         console.error('Full error:', e);
 
+        // Hide loading overlay and re-enable modal
+        $("loadingOverlay").classList.remove('show');
+        $("modal").classList.add('open');
+        $("closeModal").disabled = false;
+        $("cancel").disabled = false;
         $("submit").disabled = false;
         $("submit").textContent = "Pay & Book";
 
