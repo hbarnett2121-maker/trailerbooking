@@ -490,11 +490,6 @@
         // IMPORTANT: Open window IMMEDIATELY (before async fetch) to avoid popup blocker
         const stripeWindow = window.open('about:blank', '_blank');
 
-        if (!stripeWindow) {
-          // Popup was blocked, fallback to redirect
-          alert('Please allow popups for this site, or click OK to redirect to payment page.');
-        }
-
         console.log('Sending booking to create-checkout API...');
         const resp = await fetch(CHECKOUT_API_ENDPOINT, {
           method: "POST",
@@ -519,10 +514,10 @@
           throw new Error("No payment URL received");
         }
 
-        console.log('Redirecting popup to:', data.url);
+        console.log('Redirecting to payment:', data.url);
 
-        if (stripeWindow) {
-          // Update the blank window to Stripe checkout URL
+        if (stripeWindow && !stripeWindow.closed) {
+          // Popup worked - update the blank window to Stripe checkout URL
           stripeWindow.location = data.url;
 
           // Success - close modal and reset
@@ -538,8 +533,9 @@
           document.body.appendChild(t);
           setTimeout(() => t.remove(), 8000);
         } else {
-          // Fallback to redirect if popup blocked
-          window.location.assign(data.url);
+          // Popup was blocked - redirect current page to payment
+          console.log('Popup blocked, redirecting current page');
+          window.location.href = data.url;
         }
       } catch (e) {
         console.error('Payment session error:', e);
