@@ -517,8 +517,20 @@
         console.log('Redirecting to payment:', data.url);
 
         if (stripeWindow && !stripeWindow.closed) {
-          // Popup worked - update the blank window to Stripe checkout URL
-          stripeWindow.location = data.url;
+          // Try different methods to update window location (mobile browsers are picky)
+          try {
+            stripeWindow.location.href = data.url;
+          } catch (e) {
+            console.error('location.href failed, trying replace:', e);
+            try {
+              stripeWindow.location.replace(data.url);
+            } catch (e2) {
+              console.error('replace failed, closing and redirecting:', e2);
+              stripeWindow.close();
+              window.location.href = data.url;
+              return;
+            }
+          }
 
           // Success - close modal and reset
           $("modal").classList.remove("open");
