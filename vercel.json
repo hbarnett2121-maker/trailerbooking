@@ -1,9 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "booking.html", "use": "@vercel/static" },
-    { "src": "api/**/*.js", "use": "@vercel/node" }
-  ],
   "routes": [
     { "src": "/booking", "dest": "/booking.html" }
   ]
