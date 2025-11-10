@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const nodemailer = require('nodemailer');
 
 // Pricing structure (matches booking.html)
 const PRICING = {
@@ -64,8 +65,6 @@ async function sendPendingPaymentEmail(booking, priceInfo) {
     console.log('Email not configured, skipping notification');
     return;
   }
-
-  const nodemailer = require('nodemailer');
 
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
