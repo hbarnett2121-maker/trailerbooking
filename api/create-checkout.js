@@ -15,36 +15,42 @@ function calculateRentalPrice(booking) {
   const pricing = PRICING[booking.trailer];
   if (!pricing) return null;
 
-  const start = new Date(booking.startDate);
-  const end = new Date(booking.endDate);
-  const diffTime = Math.abs(end - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  const diffHours = (booking.dropoffHour - booking.pickupHour) + ((diffDays - 1) * 24);
+  // Calculate total rental hours (not calendar days)
+  const startDateTime = new Date(booking.startDate);
+  startDateTime.setHours(booking.pickupHour, 0, 0, 0);
 
-  let tier, price, minHours;
+  const endDateTime = new Date(booking.endDate);
+  endDateTime.setHours(booking.dropoffHour, 0, 0, 0);
 
-  if (diffDays >= 30) {
+  const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+
+  let tier, price, breakdown;
+
+  if (totalHours >= 720) { // 30 days = 720 hours
     tier = "Monthly";
     price = pricing.monthly;
-  } else if (diffDays >= 7) {
+    breakdown = `1 month`;
+  } else if (totalHours >= 168) { // 7 days = 168 hours
     tier = "Weekly";
     price = pricing.weekly;
-  } else if (diffDays > 1 || diffHours >= 24) {
+    breakdown = `1 week`;
+  } else if (totalHours >= 24) { // 24+ hours = daily rate
     tier = "Daily";
-    price = pricing.daily * diffDays;
-  } else {
+    const days = Math.ceil(totalHours / 24);
+    price = pricing.daily * days;
+    breakdown = `${days} day${days > 1 ? 's' : ''} × $${pricing.daily}`;
+  } else { // Less than 24 hours = hourly rate
+    const hours = Math.max(Math.ceil(totalHours), 2); // 2 hour minimum
     tier = "Hourly (2 hour minimum)";
-    minHours = Math.max(diffHours, 2);
-    price = pricing.hourly * minHours;
+    price = pricing.hourly * hours;
+    breakdown = `${hours} hour${hours > 1 ? 's' : ''} × $${pricing.hourly}`;
   }
 
   return {
     tier,
-    duration: diffDays > 1 ? `${diffDays} days` : `${diffHours} hours`,
+    duration: totalHours >= 24 ? `${Math.ceil(totalHours / 24)} day${Math.ceil(totalHours / 24) > 1 ? 's' : ''}` : `${Math.ceil(totalHours)} hour${Math.ceil(totalHours) > 1 ? 's' : ''}`,
     price: price,
-    breakdown: diffDays > 1
-      ? `${diffDays} days × $${tier === 'Daily' ? pricing.daily : price}`
-      : `${minHours || diffHours} hours × $${pricing.hourly}`
+    breakdown: breakdown
   };
 }
 
