@@ -210,12 +210,14 @@
 
       if (totalHours >= 720) { // 30 days = 720 hours
         tier = "Monthly Rate";
-        price = pricing.monthly;
-        breakdown = `1 month`;
+        const months = Math.ceil(totalHours / 720);
+        price = pricing.monthly * months;
+        breakdown = `${months} month${months > 1 ? 's' : ''} × $${pricing.monthly}`;
       } else if (totalHours >= 168) { // 7 days = 168 hours
         tier = "Weekly Rate";
-        price = pricing.weekly;
-        breakdown = `1 week`;
+        const weeks = Math.ceil(totalHours / 168);
+        price = pricing.weekly * weeks;
+        breakdown = `${weeks} week${weeks > 1 ? 's' : ''} × $${pricing.weekly}`;
       } else if (totalHours >= 24) { // 24+ hours = daily rate
         tier = "Daily Rate";
         const days = Math.ceil(totalHours / 24);
