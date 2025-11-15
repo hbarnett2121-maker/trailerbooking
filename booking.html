@@ -197,27 +197,32 @@
       const pricing = PRICING[state.trailer];
       if (!pricing) return null;
 
-      // Calculate duration
-      const diffTime = Math.abs(state.end - state.start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      const diffHours = (state.dropoff - state.pickup) + ((diffDays - 1) * 24);
+      // Calculate total rental hours (not calendar days)
+      const startDateTime = new Date(state.start);
+      startDateTime.setHours(state.pickup, 0, 0, 0);
+
+      const endDateTime = new Date(state.end);
+      endDateTime.setHours(state.dropoff, 0, 0, 0);
+
+      const totalHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
 
       let tier, price, breakdown;
 
-      if (diffDays >= 30) {
+      if (totalHours >= 720) { // 30 days = 720 hours
         tier = "Monthly Rate";
         price = pricing.monthly;
         breakdown = `1 month`;
-      } else if (diffDays >= 7) {
+      } else if (totalHours >= 168) { // 7 days = 168 hours
         tier = "Weekly Rate";
         price = pricing.weekly;
         breakdown = `1 week`;
-      } else if (diffDays > 1 || diffHours >= 24) {
+      } else if (totalHours >= 24) { // 24+ hours = daily rate
         tier = "Daily Rate";
-        price = pricing.daily * diffDays;
-        breakdown = `${diffDays} day${diffDays > 1 ? 's' : ''} × $${pricing.daily}`;
-      } else {
-        const hours = Math.max(diffHours, 2);
+        const days = Math.ceil(totalHours / 24);
+        price = pricing.daily * days;
+        breakdown = `${days} day${days > 1 ? 's' : ''} × $${pricing.daily}`;
+      } else { // Less than 24 hours = hourly rate
+        const hours = Math.max(Math.ceil(totalHours), 2); // 2 hour minimum
         tier = "Hourly Rate (2 hr min)";
         price = pricing.hourly * hours;
         breakdown = `${hours} hour${hours > 1 ? 's' : ''} × $${pricing.hourly}`;
