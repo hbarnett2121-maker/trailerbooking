@@ -26,19 +26,52 @@ function calculateRentalPrice(booking) {
 
   let tier, price, breakdown;
 
-  if (totalHours >= 720) { // 30 days = 720 hours
+  if (totalHours >= 720) { // 30 days = 720 hours -> monthly
+    const months = Math.floor(totalHours / 720);
+    const remainingHours = totalHours - (months * 720);
+    const remainingWeeks = Math.floor(remainingHours / 168);
+    const afterWeeks = remainingHours - (remainingWeeks * 168);
+    const remainingDays = Math.floor(afterWeeks / 24);
+    const finalHours = Math.ceil(afterWeeks - (remainingDays * 24));
+
+    price = (months * pricing.monthly) + (remainingWeeks * pricing.weekly) +
+            (remainingDays * pricing.daily) + (finalHours * pricing.hourly);
+
+    const parts = [];
+    if (months > 0) parts.push(`${months} month${months > 1 ? 's' : ''}`);
+    if (remainingWeeks > 0) parts.push(`${remainingWeeks} week${remainingWeeks > 1 ? 's' : ''}`);
+    if (remainingDays > 0) parts.push(`${remainingDays} day${remainingDays > 1 ? 's' : ''}`);
+    if (finalHours > 0) parts.push(`${finalHours} hr${finalHours > 1 ? 's' : ''}`);
+
     tier = "Monthly";
-    price = pricing.monthly;
-    breakdown = `1 month`;
-  } else if (totalHours >= 168) { // 7 days = 168 hours
+    breakdown = parts.join(' + ');
+  } else if (totalHours >= 168) { // 7 days = 168 hours -> weekly
+    const weeks = Math.floor(totalHours / 168);
+    const remainingHours = totalHours - (weeks * 168);
+    const remainingDays = Math.floor(remainingHours / 24);
+    const finalHours = Math.ceil(remainingHours - (remainingDays * 24));
+
+    price = (weeks * pricing.weekly) + (remainingDays * pricing.daily) + (finalHours * pricing.hourly);
+
+    const parts = [];
+    if (weeks > 0) parts.push(`${weeks} week${weeks > 1 ? 's' : ''}`);
+    if (remainingDays > 0) parts.push(`${remainingDays} day${remainingDays > 1 ? 's' : ''}`);
+    if (finalHours > 0) parts.push(`${finalHours} hr${finalHours > 1 ? 's' : ''}`);
+
     tier = "Weekly";
-    price = pricing.weekly;
-    breakdown = `1 week`;
+    breakdown = parts.join(' + ');
   } else if (totalHours >= 24) { // 24+ hours = daily rate
+    const days = Math.floor(totalHours / 24);
+    const remainingHours = Math.ceil(totalHours - (days * 24));
+
+    price = (days * pricing.daily) + (remainingHours * pricing.hourly);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+    if (remainingHours > 0) parts.push(`${remainingHours} hr${remainingHours > 1 ? 's' : ''}`);
+
     tier = "Daily";
-    const days = Math.ceil(totalHours / 24);
-    price = pricing.daily * days;
-    breakdown = `${days} day${days > 1 ? 's' : ''} × $${pricing.daily}`;
+    breakdown = parts.join(' + ');
   } else { // Less than 24 hours = hourly rate
     const hours = Math.max(Math.ceil(totalHours), 2); // 2 hour minimum
     tier = "Hourly (2 hour minimum)";
