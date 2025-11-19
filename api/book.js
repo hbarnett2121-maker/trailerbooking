@@ -77,7 +77,7 @@ async function sendBookingEmail(booking) {
     },
   });
 
-  console.log(`Attempting to send email from ${process.env.EMAIL_USER} to hbarnett2121@gmail.com`);
+  console.log(`Attempting to send email from ${process.env.EMAIL_USER} to Cagleandcompany@yahoo.com`);
 
   // Calculate pricing
   const priceInfo = calculateRentalPrice(booking);
@@ -124,7 +124,7 @@ Attachments:
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: 'hbarnett2121@gmail.com',
+    to: 'Cagleandcompany@yahoo.com',
     subject: `🚚 New Booking: ${booking.trailer} - ${booking.firstName} ${booking.lastName}`,
     text: emailContent,
   };
@@ -174,7 +174,7 @@ module.exports = async (req, res) => {
     // Send email notification
     try {
       await sendBookingEmail(booking);
-      console.log("✓ Email sent successfully to hbarnett2121@gmail.com");
+      console.log("✓ Email sent successfully to Cagleandcompany@yahoo.com");
     } catch (emailError) {
       console.error("✗ Email sending failed:", emailError.message);
       console.error("Full error:", emailError);

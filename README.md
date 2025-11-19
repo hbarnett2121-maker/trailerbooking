@@ -16,7 +16,7 @@ A simple trailer booking system with calendar interface and email notifications.
 - Instant email notification for each booking
 - Includes all booking details (trailer, dates, times)
 - Includes customer information (name, DOB, reason)
-- Sent to: hbarnett2121@gmail.com
+- Sent to: Cagleandcompany@yahoo.com
 
 ## Project Structure
 
@@ -81,7 +81,7 @@ Or connect your GitHub repository to Vercel for automatic deployments.
 
 ### For Admins
 
-Check your email inbox at `hbarnett2121@gmail.com` for booking notifications.
+Check your email inbox at `Cagleandcompany@yahoo.com` for booking notifications.
 
 Each email includes:
 - Trailer name
