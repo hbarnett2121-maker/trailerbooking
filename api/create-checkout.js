@@ -153,7 +153,7 @@ Attachments:
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: 'hbarnett2121@gmail.com',
+    to: 'Cagleandcompany@yahoo.com',
     subject: `⏳ PENDING: ${booking.trailer} - ${booking.firstName} ${booking.lastName} ($${priceInfo.price})`,
     text: emailContent,
   };

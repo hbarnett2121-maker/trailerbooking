@@ -51,7 +51,7 @@ Driver's license and insurance documents were sent in the previous "PENDING" ema
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: 'hbarnett2121@gmail.com',
+    to: 'Cagleandcompany@yahoo.com',
     subject: `✅ PAID: ${metadata.trailer} - ${metadata.firstName} ${metadata.lastName} ($${metadata.price})`,
     text: emailContent,
   };
