@@ -227,10 +227,16 @@ module.exports = async (req, res) => {
     }
     console.log('Price calculated:', priceInfo);
 
-    // Send email with booking details and documents (don't let this block)
-    sendPendingPaymentEmail(booking, priceInfo).catch(err => {
-      console.error('Email error (non-blocking):', err.message);
-    });
+    // Send email IMMEDIATELY when user clicks "Pay and Book" (before Stripe payment)
+    console.log('Sending booking email immediately...');
+    try {
+      await sendPendingPaymentEmail(booking, priceInfo);
+      console.log('✓ Email sent successfully before payment');
+    } catch (emailError) {
+      console.error('✗ Email failed:', emailError.message);
+      console.error('Email error details:', emailError);
+      // Continue anyway - don't block the booking if email fails
+    }
 
     // Create minimal metadata without images (to avoid size limits)
     const bookingMetadata = {
