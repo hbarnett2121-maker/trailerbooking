@@ -200,6 +200,31 @@
     const HOURS = Array.from({length:13}, (_,i)=>6+i); // 6..18
     const STORAGE_KEY = "trailer_reservations_v1";
 
+    // ========================================
+    // EXISTING BOOKINGS - MANAGED MANUALLY
+    // ========================================
+    // Add new confirmed bookings here after they complete payment.
+    // Format: { trailer: "exact name", startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", pickupHour: 6-18, dropoffHour: 6-18 }
+    const CONFIRMED_BOOKINGS = [
+      {
+        trailer: "8.5 x 20 Car Hauler",
+        startDate: "2025-11-28",
+        endDate: "2025-11-28",
+        pickupHour: 12,
+        dropoffHour: 15,
+        note: "Existing booking"
+      }
+      // Add more bookings below as needed:
+      // {
+      //   trailer: "6 x 12 Cargo Trailer",
+      //   startDate: "2025-12-01",
+      //   endDate: "2025-12-02",
+      //   pickupHour: 9,
+      //   dropoffHour: 17,
+      //   note: "Customer name or reference"
+      // },
+    ];
+
     // Pricing structure
     const PRICING = {
       "6 x 12 Cargo Trailer": { hourly: 20, daily: 55, weekly: 300, monthly: 1900 },
@@ -303,17 +328,7 @@
       trailer: TRAILERS[0],
       visible: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
       start: null, end: null, pickup: null, dropoff: null,
-      reservations: [
-        // Existing booking: Car Hauler on Nov 28, 2025, 12pm-3pm
-        {
-          trailer: "8.5 x 20 Car Hauler",
-          startDate: "2025-11-28",
-          endDate: "2025-11-28",
-          pickupHour: 12,
-          dropoffHour: 15
-        },
-        ...loadReservations()
-      ]
+      reservations: [...CONFIRMED_BOOKINGS, ...loadReservations()]
     };
 
     // UI
