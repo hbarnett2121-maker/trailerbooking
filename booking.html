@@ -196,15 +196,7 @@
     const CHECKOUT_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/api/create-checkout";
 
     // Data / utils
-    // IMPORTANT: These trailer names must EXACTLY match the PRICING keys and backend API
-    const TRAILERS = [
-      "5 x 10 Utility Trailer",
-      "6 x 12 Cargo Trailer",
-      "7 x 16 Utility Pipe Trailer",
-      "7 x 16 Utility Ramp Trailer",
-      "7 x 20 Utility Trailer",
-      "8.5 x 20 Car Hauler"
-    ];
+    const TRAILERS = ["5 x 10 Utility Trailer","6 x 12 Cargo Trailer","8.5 x 20 Car Hauler","7 x 20 Utility Trailer","7 x 16 Utility Pipe Trailer","7 x 16 Utility Ramp Trailer"];
     const HOURS = Array.from({length:13}, (_,i)=>6+i); // 6..18
     const STORAGE_KEY = "trailer_reservations_v1";
 
@@ -225,14 +217,14 @@
       // },
     ];
 
-    // Pricing structure - MUST match TRAILERS array and backend API exactly
+    // Pricing structure
     const PRICING = {
-      "5 x 10 Utility Trailer": { hourly: 15, daily: 45, weekly: 250, monthly: 750 },
       "6 x 12 Cargo Trailer": { hourly: 20, daily: 55, weekly: 300, monthly: 1900 },
       "7 x 16 Utility Pipe Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
-      "7 x 16 Utility Ramp Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
       "7 x 20 Utility Trailer": { hourly: 30, daily: 75, weekly: 300, monthly: 1300 },
-      "8.5 x 20 Car Hauler": { hourly: 40, daily: 95, weekly: 600, monthly: 2000 }
+      "8.5 x 20 Car Hauler": { hourly: 40, daily: 95, weekly: 600, monthly: 2000 },
+      "7 x 16 Utility Ramp Trailer": { hourly: 25, daily: 65, weekly: 350, monthly: 1100 },
+      "5 x 10 Utility Trailer": { hourly: 15, daily: 45, weekly: 250, monthly: 750 }
     };
 
     function calculatePrice() {
