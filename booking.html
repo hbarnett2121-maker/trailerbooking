@@ -699,6 +699,23 @@
 
         console.log('SUCCESS! Got payment URL:', data.url);
 
+        // Save reservation to localStorage immediately so calendar shows it as booked
+        const reservation = {
+          trailer: record.trailer,
+          startDate: record.startDate,
+          endDate: record.endDate,
+          pickupHour: record.pickupHour,
+          dropoffHour: record.dropoffHour,
+          note: `${record.firstName} ${record.lastName} - Pending Payment`,
+          status: 'pending',
+          createdAt: record.createdAt
+        };
+        const existingReservations = loadReservations();
+        existingReservations.push(reservation);
+        saveReservations(existingReservations);
+        state.reservations = [...CONFIRMED_BOOKINGS, ...existingReservations];
+        console.log('Reservation saved to localStorage:', reservation);
+
         // Show loading overlay and close modal
         $("modal").classList.remove('open');
         $("loadingOverlay").classList.add('show');
@@ -755,6 +772,18 @@
     // Handle return from Stripe checkout
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
+      // Update pending reservations to confirmed status
+      const reservations = loadReservations();
+      reservations.forEach(r => {
+        if (r.status === 'pending') {
+          r.status = 'confirmed';
+          r.note = r.note.replace(' - Pending Payment', ' - CONFIRMED');
+        }
+      });
+      saveReservations(reservations);
+      state.reservations = [...CONFIRMED_BOOKINGS, ...reservations];
+      draw(); // Refresh calendar to show confirmed booking
+
       const t = document.createElement("div");
       t.className = "toast";
       t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#06F713;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5;font-weight:600";
@@ -766,6 +795,12 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }, 8000);
     } else if (urlParams.get('canceled') === 'true') {
+      // Remove pending reservations if payment was canceled
+      const reservations = loadReservations().filter(r => r.status !== 'pending');
+      saveReservations(reservations);
+      state.reservations = [...CONFIRMED_BOOKINGS, ...reservations];
+      draw(); // Refresh calendar to remove pending booking
+
       const t = document.createElement("div");
       t.className = "toast";
       t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#ff6b6b;color:white;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5";
