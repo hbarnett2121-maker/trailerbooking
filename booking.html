@@ -89,6 +89,19 @@
       .instruction-box{font-size:13px;padding:10px 12px}
       .date-range-display{font-size:13px;padding:8px 12px}
     }
+
+    /* REVIEWS STYLES */
+    .review-item{border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;background:#fafafa}
+    .review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .review-name{font-weight:700;color:var(--ink)}
+    .review-stars{color:#f59e0b;font-size:16px}
+    .review-trailer{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .review-text{font-size:14px;line-height:1.5;color:var(--ink)}
+    .review-date{font-size:11px;color:var(--muted);margin-top:8px}
+    .no-reviews{text-align:center;padding:20px;color:var(--muted);font-style:italic}
+    .star-rating span{transition:all 0.2s}
+    .star-rating span:hover{transform:scale(1.2)}
+    .star-filled{color:#f59e0b}
   </style>
 </head>
 <body>
@@ -130,6 +143,15 @@
           <div class="times" id="dropoff"></div>
         </div>
       </div>
+    </div>
+
+    <!-- CUSTOMER REVIEWS -->
+    <div class="card" id="reviewsSection">
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--ink)">⭐ Customer Reviews</div>
+      <div id="reviewsList" style="margin-bottom:16px">
+        <div class="hint">Loading reviews...</div>
+      </div>
+      <button class="btn" id="writeReviewBtn" style="width:100%">✍️ Write a Review</button>
     </div>
   </div>
 
@@ -180,6 +202,52 @@
       <div class="sheet-footer">
         <button class="btn" id="cancel">Cancel</button>
         <button class="btn primary" id="submit">Pay & Book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVIEW SUBMISSION MODAL -->
+  <div class="modal" id="reviewModal">
+    <div class="sheet">
+      <div class="sheet-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Write a Review</div>
+          <button class="btn" id="closeReviewModal" style="padding:4px 8px;min-height:32px">✕</button>
+        </div>
+      </div>
+      <div class="sheet-content">
+        <div class="grid" style="grid-template-columns:1fr;gap:12px">
+          <div class="field"><label>Your Name</label><input id="reviewName" placeholder="Jane D."></div>
+          <div class="field"><label>Email (not published)</label><input id="reviewEmail" type="email" placeholder="jane@example.com"></div>
+          <div class="field">
+            <label>Rating</label>
+            <div id="ratingStars" style="display:flex;gap:8px;font-size:28px;cursor:pointer">
+              <span data-rating="1">☆</span>
+              <span data-rating="2">☆</span>
+              <span data-rating="3">☆</span>
+              <span data-rating="4">☆</span>
+              <span data-rating="5">☆</span>
+            </div>
+            <input type="hidden" id="reviewRating" value="">
+          </div>
+          <div class="field">
+            <label>Which trailer did you rent?</label>
+            <select id="reviewTrailer" style="padding:12px;border:1px solid var(--border);border-radius:10px;font-size:16px">
+              <option value="">Select a trailer (optional)</option>
+              <option value="5 x 10 Utility Trailer">5 x 10 Utility Trailer</option>
+              <option value="6 x 12 Cargo Trailer">6 x 12 Cargo Trailer</option>
+              <option value="8.5 x 20 Car Hauler">8.5 x 20 Car Hauler</option>
+              <option value="7 x 20 Utility Trailer">7 x 20 Utility Trailer</option>
+              <option value="7 x 16 Utility Pipe Trailer">7 x 16 Utility Pipe Trailer</option>
+              <option value="7 x 16 Utility Ramp Trailer">7 x 16 Utility Ramp Trailer</option>
+            </select>
+          </div>
+          <div class="field"><label>Your Review</label><textarea id="reviewText" rows="4" placeholder="Tell us about your experience..."></textarea></div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button class="btn" id="cancelReview">Cancel</button>
+        <button class="btn primary" id="submitReview">Submit Review</button>
       </div>
     </div>
   </div>
@@ -743,6 +811,161 @@
 
     // Init
     draw();
+
+    // ===== REVIEWS FUNCTIONALITY =====
+    const REVIEWS_API_ENDPOINT = "https://trailerbookingrrwal.vercel.app/api/reviews";
+
+    // Fetch and display reviews
+    async function loadReviews() {
+      const reviewsList = $("reviewsList");
+      try {
+        const resp = await fetch(REVIEWS_API_ENDPOINT);
+        const data = await resp.json();
+
+        if (!data.reviews || data.reviews.length === 0) {
+          reviewsList.innerHTML = '<div class="no-reviews">No reviews yet. Be the first to share your experience!</div>';
+          return;
+        }
+
+        reviewsList.innerHTML = data.reviews.map(r => `
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-name">${escapeHtml(r.name)}</span>
+              <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+            </div>
+            ${r.trailer ? `<div class="review-trailer">🚚 ${escapeHtml(r.trailer)}</div>` : ''}
+            <div class="review-text">${escapeHtml(r.review)}</div>
+            ${r.date ? `<div class="review-date">📅 ${r.date}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load reviews:', e);
+        reviewsList.innerHTML = '<div class="no-reviews">No reviews yet. Be the first to share your experience!</div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Star rating interaction
+    let selectedRating = 0;
+    const starsContainer = $("ratingStars");
+    starsContainer.classList.add('star-rating');
+
+    starsContainer.addEventListener('click', (e) => {
+      if (e.target.dataset.rating) {
+        selectedRating = parseInt(e.target.dataset.rating);
+        $("reviewRating").value = selectedRating;
+        updateStars();
+      }
+    });
+
+    starsContainer.addEventListener('mouseover', (e) => {
+      if (e.target.dataset.rating) {
+        highlightStars(parseInt(e.target.dataset.rating));
+      }
+    });
+
+    starsContainer.addEventListener('mouseout', () => {
+      updateStars();
+    });
+
+    function highlightStars(rating) {
+      const stars = starsContainer.querySelectorAll('span');
+      stars.forEach((star, i) => {
+        star.textContent = i < rating ? '★' : '☆';
+        star.classList.toggle('star-filled', i < rating);
+      });
+    }
+
+    function updateStars() {
+      highlightStars(selectedRating);
+    }
+
+    // Review modal controls
+    $("writeReviewBtn").onclick = () => {
+      $("reviewModal").classList.add('open');
+    };
+
+    ["closeReviewModal", "cancelReview"].forEach(id => {
+      $(id).onclick = () => {
+        $("reviewModal").classList.remove('open');
+        // Reset form
+        $("reviewName").value = '';
+        $("reviewEmail").value = '';
+        $("reviewTrailer").value = '';
+        $("reviewText").value = '';
+        selectedRating = 0;
+        updateStars();
+      };
+    });
+
+    // Submit review
+    $("submitReview").onclick = async () => {
+      const name = $("reviewName").value.trim();
+      const email = $("reviewEmail").value.trim();
+      const rating = selectedRating;
+      const trailer = $("reviewTrailer").value;
+      const review = $("reviewText").value.trim();
+
+      const missing = [];
+      if (!name) missing.push('name');
+      if (!email) missing.push('email');
+      if (!rating) missing.push('rating');
+      if (!review) missing.push('review');
+
+      if (missing.length > 0) {
+        alert('Please fill in: ' + missing.join(', '));
+        return;
+      }
+
+      $("submitReview").disabled = true;
+      $("submitReview").textContent = 'Submitting...';
+
+      try {
+        const resp = await fetch(REVIEWS_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, rating, trailer, review })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to submit review');
+        }
+
+        // Close modal and show success
+        $("reviewModal").classList.remove('open');
+        $("reviewName").value = '';
+        $("reviewEmail").value = '';
+        $("reviewTrailer").value = '';
+        $("reviewText").value = '';
+        selectedRating = 0;
+        updateStars();
+
+        // Show success toast
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.style.cssText = "position:fixed;right:14px;bottom:64px;background:#06F713;padding:16px 20px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.1);font-size:15px;max-width:360px;line-height:1.5;font-weight:600";
+        t.textContent = "🎉 Thank you for your review! It will be displayed after approval.";
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 5000);
+
+      } catch (e) {
+        console.error('Review submission error:', e);
+        alert('Failed to submit review: ' + e.message);
+      } finally {
+        $("submitReview").disabled = false;
+        $("submitReview").textContent = 'Submit Review';
+      }
+    };
+
+    // Load reviews on page load
+    loadReviews();
 
     // Handle return from Stripe checkout
     const urlParams = new URLSearchParams(window.location.search);
