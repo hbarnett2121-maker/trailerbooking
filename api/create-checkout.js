@@ -283,6 +283,7 @@ module.exports = async (req, res) => {
           },
         ],
         mode: 'payment',
+        allow_promotion_codes: true,
         success_url: `https://trailerbookingrrwal.vercel.app/booking?success=true`,
         cancel_url: `https://trailerbookingrrwal.vercel.app/booking?canceled=true`,
         customer_email: booking.email,
