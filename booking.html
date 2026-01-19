@@ -318,7 +318,7 @@
     function saveReservations(r){ localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
     function loadReservations(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch{ return []; } }
     function overlaps(a,b){
-      const dateOverlap = !(new Date(a.endDate) < new Date(b.startDate) || new Date(b.endDate) < new Date(a.startDate));
+      const dateOverlap = !(new Date(a.endDate+"T00:00:00") < new Date(b.startDate+"T00:00:00") || new Date(b.endDate+"T00:00:00") < new Date(a.startDate+"T00:00:00"));
       if(!dateOverlap) return false;
       return !(a.dropoffHour < b.pickupHour || b.dropoffHour < a.pickupHour);
     }
@@ -358,7 +358,7 @@
       const full = new Set();
       const forTrailer = state.reservations.filter(r=>r.trailer===state.trailer);
       forTrailer.forEach(r=>{
-        const sd=new Date(r.startDate), ed=new Date(r.endDate);
+        const sd=new Date(r.startDate+"T00:00:00"), ed=new Date(r.endDate+"T00:00:00");
         for(let d=new Date(sd); d<=ed; d.setDate(d.getDate()+1)){
           if(r.pickupHour<=6 && r.dropoffHour>=18) full.add(fmtDate(d));
         }
