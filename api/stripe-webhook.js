@@ -104,6 +104,30 @@ module.exports = async (req, res) => {
       );
       console.log('✓ Payment confirmation email sent');
 
+      // Trigger Wix Automation for customer email
+      try {
+        const wixResponse = await fetch('https://www.cagleandcompany.com/_functions/stripePaymentComplete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: session.metadata.email,
+            firstName: session.metadata.firstName,
+            lastName: session.metadata.lastName,
+            trailer: session.metadata.trailer,
+            startDate: session.metadata.startDate,
+            endDate: session.metadata.endDate,
+            pickupHour: session.metadata.pickupHour,
+            dropoffHour: session.metadata.dropoffHour,
+            price: session.metadata.price,
+            paymentId: session.payment_intent
+          })
+        });
+        console.log('✓ Wix automation triggered');
+      } catch (wixError) {
+        console.error('Wix automation error:', wixError.message);
+        // Don't fail the webhook if Wix call fails
+      }
+
     } catch (error) {
       console.error('Error processing webhook:', error);
       // Still return 200 to Stripe so it doesn't retry
